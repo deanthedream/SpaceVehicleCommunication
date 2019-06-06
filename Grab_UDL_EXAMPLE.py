@@ -19,7 +19,7 @@ creds = "Basic " + base64.b64encode(b"username:password").decode("ascii")
 creds = "Basic aCharacterStringFromUDLutility=="
 with open("/home/dean/Documents/AFRL2019/myString.txt", 'r') as f:
     myString = f.read().replace("\n","")
-creds = "Basic " + myString
+creds = "Basic " + myString # myString is in a secured file so this is not pushed into a repo
 
 #Copy the URL from the UDL Dynamic Query Tool into the line below.
 #   This sample query will return all element sets for the International
@@ -27,7 +27,6 @@ creds = "Basic " + myString
 url="https://unifieddatalibrary.com/udl/elset?epoch=%3E2018-11-01T00:00:00.000000Z&satNo=25544"
 
 #Make the actual REST call (ignore the InsecureRequestWarning).
-result = requests.get(url, headers={'Authorization':creds}, verify=False)
 result = requests.get(url, headers={'Authorization':creds}, verify=False)
 
 #JSON decodes easily in Python, into a list of dictionaries.
@@ -47,6 +46,7 @@ result = requests.get(url, headers={'Authorization':creds}, verify=False)
 #   the heavy lifting of deleting unwanted columns and converting to a NumPy
 #   ndarray.
 elsetsDataFrame = pd.DataFrame(result.json())
+#elsetsDataFrame.keys() #Gets all possible columns
 keepColumns = ['epoch','meanMotion','eccentricity','inclination','meanAnomaly']
 elsetsArray = elsetsDataFrame[keepColumns].values
 
