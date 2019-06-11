@@ -49,7 +49,8 @@ class grabUDL:
             elif params[i]['unitOfMeasure'] == 'kilometers' or \
                  params[i]['unitOfMeasure'] == 'km':
                 params[i]['unit'] = u.kilometer
-            elif params[i]['unitOfMeasure'] == 'km/sec':
+            elif params[i]['unitOfMeasure'] == 'km/sec' or \
+                 params[i]['unitOfMeasure'] == 'kilometers per second':
                 params[i]['unit'] = u.kilometer/u.second
             elif params[i]['unitOfMeasure'] == 'Hz':
                 params[i]['unit'] = 1./u.second
@@ -69,10 +70,27 @@ class grabUDL:
                 params[i]['unit'] = u.degree/u.second
             elif params[i]['unitOfMeasure'] == 'seconds':
                 params[i]['unit'] = u.second
+            elif params[i]['unitOfMeasure'] == 'minutes':
+                params[i]['unit'] = u.minute
             elif params[i]['unitOfMeasure'] == 'dBW':
                 params[i]['unit'] = u.decibel*u.joule/u.second
             elif params[i]['unitOfMeasure'] == 'dBW/Hz':
                 params[i]['unit'] = u.decibel*u.joule
+            elif params[i]['unitOfMeasure'] == 'm/s':
+                params[i]['unit'] = u.meter/u.second
+            elif params[i]['unitOfMeasure'] == 'meters squared':
+                params[i]['unit'] = u.meter**2.
+            elif params[i]['unitOfMeasure'] == 'revolutions per day':
+                #in regards to mean motion so should be julian days
+                params[i]['unit'] = 1./u.day
+            elif params[i]['unitOfMeasure'] == 'revolutions per day squared':
+                #in regards to mean motion so should be julian days
+                params[i]['unit'] = 1./u.day**2.
+            elif params[i]['unitOfMeasure'] == 'revolutions per day cubed':
+                #in regards to mean motion so should be julian days
+                params[i]['unit'] = 1./u.day**3.
+            elif params[i]['unitOfMeasure'] == 'inverse earth radii':
+                params[i]['unit'] = 1./u.earthRad
             else:
                 print('unhandled unit: ' + str(params[i]['unitOfMeasure']))
         return params
