@@ -1,0 +1,22 @@
+Location Name Type
+Apt,France,receiver GRAVESr Radar
+Dijon,France,transmitter GRAVESf Radar
+Wachtberg,Germany TIRAFHR Radar
+Winchester,UK Chilbolton Radar
+Tromso,Norway EISCATn Radar
+Kiruna,Sweden EISCATs Radar
+Sodankyla,Finland EISCATt Radar
+Longyearbyen,Svalbard EISCATsv Radar
+Effelsberg,Germany TIRAEF RadioTele
+Tenerife OGS Opt
+Zimmerwald,Switzerland ZimLAT Opt
+Zimmerwald,Switzerland ZimSMART Opt
+La Silla,Chile TarotS Opt
+NiceFrance TarotN Opt
+Haute-ProvenceObservatory ROSACE Opt
+LaSagra,Spain LaSagra Opt
+Mallorca Mallorca Opt
+PlateaudeCaussols,France Tarot Opt
+Odeillo,France SPOC Opt
+Castelgrande,Italy TT1 Opt
+Montsec,Spain FabraROA Opt
