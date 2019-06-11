@@ -1,0 +1,13 @@
+ID #,Location,Name,Type,Latitude,Longitude,Alt (m),Open,Closed,Notes
+330,"Purple Mtn, Xinjian, China",XOS,Opt,32.737044,118.463981,174,,,
+337,"Shanghai, Sheshan Obs",SHAO1,Opt,31.096378,121.188542,85,,,
+9991,"Guanxing Mtn, Qingdao",QOS,Opt,36.070181,120.321114,66,,,
+9992,Huairou,HSOS,Opt,40.315494,116.594225,56,,,
+9993,"Shanghai, Xujiahui Obs",SHAO,Opt,31.190164,121.429419,17,,,
+9994,Xinglong,LAMOST3,Opt,40.395744,117.575861,875,,,
+9995,Xinglong,LAMOST,Opt,40.389094,117.489433,656,,,
+9996,Heilongnjiang,HOS,Opt,47.5,133.42,153,,,??
+9997,"Yaoan, Yunan",YOS,Opt,25.6,101.1,153,,,??
+5551,Xuanhua,Xuanhua,PhArry,26.621667,107.698056,875,,,??
+5552,Xuanhua,Xuanhua1,PhArry,40.447829,115.117107,1286,,closed,
+5553,Xinjiang,LPAR,PhArry,41.641458,86.236956,933,,,

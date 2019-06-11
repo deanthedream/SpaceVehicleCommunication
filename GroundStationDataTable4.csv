@@ -1,0 +1,22 @@
+ID #,Location,Name,Type,Latitude,Longitude,Alt (m),Open,Close
+5551,"Apt,France,receiver",GRAVESr,Radar,44.071508,5.534578,932,12/15/05,
+5552,"Dijon,France,transmitter",GRAVESf,Radar,47.347778,5.515,202,12/15/05,143.050MHz
+5553,"Wachtberg,Germany",TIRAFHR,Radar,50.616631,7.129611,270,,
+5554,"Winchester,UK",Chilbolton,Radar,51.145022,-1.438447,83,,
+5555,"Tromso,Norway",EISCATn,Radar,69.586439,19.226111,69,,
+5556,"Kiruna,Sweden",EISCATs,Radar,67.860778,20.433806,473,,
+5557,"Sodankyla,Finland",EISCATt,Radar,67.363903,26.630417,204,,
+5558,"Longyearbyen,Svalbard",EISCATsv,Radar,78.152669,16.058706,432,,
+5559,"Effelsberg,Germany",TIRAEF,RadioTele,50.524803,6.883597,368,,radio telescope
+J04,Tenerife,OGS,Opt,28.300939,-16.511903,2392,,
+26,"Zimmerwald,Switzerland",ZimLAT,Opt,46.877225,7.465225,897,,
+27,"Zimmerwald,Switzerland",ZimSMART,Opt,46.876947,7.465086,897,,
+262,"LaSilla,Chile",TarotS,Opt,-29.261053,-70.731775,2385,,
+20,NiceFrance,TarotN,Opt,43.727458,7.299061,314,,
+511,Haute-ProvenceObservatory,ROSACE,Opt,43.931508,5.712447,653,02/01/01,
+J75,"LaSagra,Spain",LaSagra,Opt,37.9826,-2.5656,1530,,NEO
+620,Mallorca,Mallorca,Opt,39.642842,2.950828,161,05/01/91,NEO
+9991,"PlateaudeCaussols,France",Tarot,Opt,43.752056,6.923386,1270,,
+9992,"Odeillo,France",SPOC,Opt,42.494775,2.030278,1543,,??
+9993,"Castelgrande,Italy",TT1,Opt,40.94,15.19,904,,??
+9994,"Montsec,Spain",FabraROA,Opt,42.05165,0.729639,1570,,

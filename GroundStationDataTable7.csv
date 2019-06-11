@@ -1,0 +1,20 @@
+ID #,Location,Name,Type,Latitude,Longitude,Alt (m),Open,Close,Notes
+9991,"Suffield, Alberta",CANSUF,Opt,50.293059,-111.104803,750.7,,,
+9992,"Valcartier, Quebec",CANVAL,Opt,46.875551,-71.47069,147.9,,,
+9993,"Ottawa, Ontario",CANOTT,Opt,45.35455,-75.891016,90,,,
+9994,"RMC, Kingston",CASTOR,Opt,44.231101,-76.467252,65.3,,,
+9991,"Udaipur, India",U1,Opt,24.604622,73.6742,587,,,
+6661,"Kamisaibara, Japan",KSGC,PhArry,35.331253,133.930308,750,,,3.265 MHz
+9991,"Ibaraki, Japan",NICTKashima,Opt,35.956269,140.657592,21,,,
+9992,"Bisei, Japan",BSGC,Opt,34.672,133.545347,417,,,
+9993,"Nyukasa, Nagano",JAXANyukasa,Opt,35.901389,138.171667,1870,,,
+9994,"Chofu, Japan",JAXALEO,Opt,35.678719,139.556917,65,,,
+5551,"Shigaraki, Japan",MURadar,Radar,34.853908,136.105633,378,09/02/84,,"atmos, VHF"
+5552,"Kagoshima, Japan",JAXAUchinoura,Radar,31.254464,131.078478,312,,,
+5553,"Nagano, Japan",JAXAUsuda,Radar,36.132997,138.362139,1462,,,
+9991,"Daejeon, Korea",KASI,Opt,36.397597,127.375036,107,,,
+9991,"Cirmea, Ukraine",Yevpatoria,Opt,45.189103,33.187047,16,,,
+10018,"Yevpatoria, Ukraine",YevpAZT8,Opt,45.219465,33.162594,9.4,,,
+6661,"Sevastopol, Ukraine",x14,PhArry,44.578756,33.386436,7,06/01/79,,"228, 173"
+6662,"Mukachevo, Ukraine",x15,PhArry,48.377753,22.707628,138,06/01/79,,"194, 258"
+9991,"Majdanak, Uzbekistan",Majd2,Opt,38.684789,66.943058,2727,,,Min of Def

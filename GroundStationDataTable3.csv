@@ -1,0 +1,18 @@
+ID #,Location,Name,Type,Latitude,Longitude,Alt (m),Open,Close,Notes
+6661,"Olenegorsk, Russia",Olenegorsk,PhArry,68.1135,33.9105,240,06/01/76,,"325, 295"
+6662,"Olenegorsk, Russia",Olenegorsk,PhArry,68.1166,33.9205,241,06/01/78,,"310, Dnepr"
+6663,"Balkhash, Kazakhstan",Balkhash,PhArry,46.60289,74.5285,348,01/01/72,,Dnepr
+6664,"Balkhash, Kazakhstan",Balkhash,PhArry,46.60446,74.5326,348,,,Dnepr
+6665,"Mishelevka, Russia",Mishelevka,PhArry,52.877936,103.272944,513,01/01/68,,"70, 200"
+6666,"Mishelevka, Russia",Mishelevka,PhArry,52.874986,103.2607,493,01/01/68,,"130, Dnepr"
+6667,"Pechora, Russia",Pechora,PhArry,65.2106,57.2956,102,01/01/84,,Dar'yal
+6668,"Gabala, Azerbaijan",Gabala,PhArry,40.871514,47.808928,628,01/01/85,,"160, Dar'yal"
+6669,"Baranovichi, Belarus",Baranovichi,PhArry,52.862,26.4677,169,01/01/02,,"263, Volga"
+66610,"Moscow, Russia",Moscow,PhArry,55.23109,37.2943,226,,,
+66611,"Moscow, Russia",Moscow,PhArry,56.173314,37.769239,263,,,"60, 150, Don-2N"
+66612,"Pavlovsk, Russia",Krona,PhArry,42.935333,132.577056,210,,,
+66613,"Lekhtusi, Russia",Lekhtusi,PhArry,60.275456,30.545033,92,01/01/06,,Voronezh-M
+66614,"Armavir, Russia",Armavir,PhArry,44.925425,40.983892,254,06/01/09,,Voronezh-DM
+66615,"Storozhevaya, Russia",Krona20ZH6,PhArry,43.825361,41.342739,1107,,,
+191,"Nurek, Tajikistan",Nurek,Opt,38.281592,69.2233,2217,,,
+9992,"Storozhevaya, Russia",Krona30ZH6,Opt,43.718331,41.226253,2115,,,

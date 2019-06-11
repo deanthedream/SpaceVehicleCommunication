@@ -1,0 +1,48 @@
+ID #,Location,Name,Type,Latitude,Longitude,Alt (m),Open,Close,Notes
+3820,"Clear, AK",ClearPA,PhArry,64.300233,-149.190964,175,06/01/61,,AN/FPS-123
+3860,"Cape Cod, MA",CapeCod,PhArry,41.752408,-70.538342,67,04/04/80,,FPS-115
+3880,"Beale, CA",Beale,PhArry,39.13605,-121.350628,117,08/15/80,,FPS-115
+393,"Shemya, AK",CobraDane,PhArry,52.737175,174.091528,68,07/13/77,,"AN/FPS-108, #39"
+3940,"Thule, Greenland",ThuleSE,PhArry,76.569456,-68.298956,424,06/24/87,,FPS-120
+396,"Cavalier, ND",PARCS,PhArry,48.724594,-97.899894,344,03/31/75,,FPQ-16
+3450,"Fylingdales, UK",Fylingdales,PhArry,54.361775,-0.670033,258,08/18/92,,PA FPS-120
+2100,"Socorro, NM",Socorro,Opt,33.817192,-106.659867,1510,03/01/83,,"40"" FSQ 114, az"
+2300,"Maui, HI",Maui,Opt,20.7084,-156.257433,3058,03/01/83,,"generic, also 235"
+2400,Diego Garcia,DiegoGarcia,Opt,-7.411714,72.452208,-61.2,11/30/86,,generic
+260,"Moron, Spain",MOSS,Opt,37.150111,-5.591386,93,09/01/98,,AN/FSQ-224
+951,"Maui, HI",MOTIF,Opt,20.708625,-156.257661,3026,01/01/79,,1.2 m
+952,"Maui, HI",AMOS,Opt,20.708467,-156.257206,3026,01/01/63,,0.6 m
+961,"Maui, HI",BDT,Opt,20.708549,-156.257564,3058.8,06/01/88,,0.8 m
+965,"Maui, HI",AEOS,Opt,20.708228,-156.256636,3029,06/01/00,,3.6 m
+970,"Maui, HI",Raven_MSSS,Opt,20.708463,-156.257488,3058.5,,,
+998,"Maui, HI",RMERaven,Opt,20.746206,-156.43165,83,,,
+996,"Flagstaff, AZ",USNO,Opt,35.184114,-111.740714,2303,,,1.3 m
+9991,"Albuquerque, NM",SOR,Opt,34.964231,-106.463869,1891,,,
+9992,"Cerro Tololo, Chile",MODEST,Opt,-30.169031,-70.806308,2205,,,
+9993,Kirtland (AlbuRaven),KirtlandRAVEN,Opt,34.96305,-106.497256,1725,,,
+9994,"Socorro, NM",SST,Opt,33.739408,-106.364325,2432,07/01/11,,
+333,Kwajalein Atoll,ALCOR,Radar,9.398614,167.482883,47,01/01/70,,5670 MHz (C )
+334,Kwajalein Atoll,ALTAIR,Radar,9.395472,167.479328,66,01/01/72,,"160 MHz (VHF),"
+335,Kwajalein Atoll,TRADEX,Radar,9.398733,167.482217,5,01/01/82,,"1320 MHz (L), 2"
+354,Ascension,Ascension15,Radar,-7.906608,-14.402497,59,01/01/57,,FPQ-15
+355,Ascension,Ascension18,Radar,-7.974386,-14.391703,143,01/01/57,,
+359,"Clear, AK",ClearR,Radar,64.291242,-149.194103,213,06/01/61,,CW FPS-92
+363,Antigua,Antigua,Radar,17.143614,-61.792475,6,01/01/57,,FPQ-14
+369,"Millstone Hill, MA",MILLH,Radar,42.617442,-71.490967,127,10/05/57,,"old 331, 1a, 1295"
+371,"Millstone Hill, MA",MILLFIRE,Radar,42.617567,-71.492383,124,,,laser
+372,"Millstone Hill, MA",MILLHAY,Radar,42.623272,-71.488206,120,05/17/65,,"10 GHz (X), 96 G"
+373,"Millstone Hill, MA",MILLHAX,Radar,42.622792,-71.487222,120,01/01/94,,16 GHz (Ku)
+375,"Vardo, Norway",GlobusII,Radar,70.367153,31.127711,63,,,
+399,"Eglin, FL",Eglin,Radar,30.572394,-86.214692,36,01/29/69,,"FPS-85, also #39"
+932,"Kaena Point, HI",KaenaPt,Radar,21.572056,-158.266578,300,01/01/72,,FPQ-14
+741,"San Diego, CA",SanDiegoR,Intf,32.577492,-116.974731,125.4,,,rec
+742,"Elephant Butte, NM",ElephantButteR,Intf,33.445544,-106.998122,1443.6,,,rec
+743,"Silver Lake, MS",SilverLakeR,Intf,33.147342,-91.020897,10.5,,,rec
+744,"Tattnel, GA",TattnallR,Intf,32.043725,-81.926017,28.3,10/27/87,,rec
+745,"Lake Kickapoo, TX",LakeKickapooT,Intf,33.553978,-98.762908,309.9,01/01/61,,trans
+746,"Red River, AR",RedRiverR,Intf,33.330772,-93.550056,91.8,,,rec
+747,"Hawkingsville, GA",HawkingsvilleR,Intf,32.28895,-83.536283,77.2,,,rec
+748,"Gila River, AZ",GilaRiverT,Intf,33.113389,-112.030725,321,,,trans
+749,"Jordan Lake, AL",JordanLakeT,Intf,32.659064,-86.263514,99.2,,,trans
+9995,LEO Satelite 34903,STSS ATRR,SB,0,0,0,01/31/11,,no elements avail
+9996,LEO Satelite 37168,SBSS-1,SB,0,0,0,02/23/11,,"a=634 km, i = 98"
