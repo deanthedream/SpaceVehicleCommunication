@@ -166,12 +166,12 @@ for ikey1 in np.arange(len(pdData.keys())):
             outAX[1][ikey1][ikey2] = plotKDEfromScatter(pdData[key1], ax=outAX[1][ikey1][ikey1])
             #mDFL[key1][key2] = plt.gca()
         else:
-            outAX[1][ikey1][ikey2] = plotContourFromScatter(pdData[key1],pdData[key2],ax=outAX[1][ikey1][ikey2],bins=100,figsize=(6,8))
+            outAX[1][ikey1][ikey2] = plotContourFromScatter(pdData[key1],pdData[key2],ax=outAX[1][ikey1][ikey2],nbins=11,figsize=(6,8))
             #mDFL[key1][key2] = plt.gca()
         if not key2 == list(pdData.keys())[0]: # the y-axis keys
             outAX[1][ikey1][ikey2].get_yaxis().set_visible(False)
         else:
-            outAX[1][ikey1][ikey2].set_ylabel(list(pdData.keys())[ikey1],weight='bold',rotation=0,labelpad=40) #set ylabel
+            outAX[1][ikey1][ikey2].set_ylabel('\n' + list(pdData.keys())[ikey1],weight='bold',rotation=0,labelpad=40) #set ylabel
 
             #NEED ADJUSTMENT IF KEY2=0, USE Y AXIS LABELS OF PLOT TO RIGHT
         if not key1 == list(pdData.keys())[-1]: # the x-axis keys
