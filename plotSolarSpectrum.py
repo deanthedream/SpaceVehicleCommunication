@@ -10,6 +10,7 @@ import pyspectral.solar as SOLAR
 from pyspectral.solar import TOTAL_IRRADIANCE_SPECTRUM_2000ASTM
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 wavelengths = np.linspace(start=250.*10.**-9.,stop=2500.*10.**-9., num=200) #in nm
 #Inputs wavelength in meters
@@ -39,5 +40,17 @@ ax2.set_ylabel(r'Solar Irradiance $(W/m^2/Sr/nm)$', weight='bold', color='red')
 
 plt.subplots_adjust(left=0.15,right=0.85)
 
-
 plt.show(block=False)
+
+#Construct Solar Irradiance interpolant with input (nm) output (W/m^2/Sr/nm)
+SolarIrradianceInterpolant = interp1d(SOLARirradiance.wavelength*10**3.,SOLARirradiance.irradiance*(4.*np.pi))
+
+
+#Could also try
+#https://pypi.org/project/SolarUtils/
+
+#Python Module Calculating atmospheric absorption
+#https://pypi.org/project/lowtran/
+#Dont know what all this includes, is it wavelength and azimuth dependent???
+
+

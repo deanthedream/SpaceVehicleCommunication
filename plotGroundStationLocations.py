@@ -8,70 +8,56 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import csv
-
-#### Load in Ground Station Locations from Vallado 2011 "Simulating Space Survelliance Networks"
-GSpaperFilePath = '/home/dean/Documents/AFRL2019'
-fileNames = ['GroundStationDataTable1.csv', # US AF Space Surveillance Network Sensors
-'GroundStationDataTable2.csv', # US AF Space Surveillance Network Sensors
-'GroundStationDataTable3.csv', # Russian Space Surveillance Sensors
-'GroundStationDataTable4.csv', # European Space Surveillance Sensors
-'GroundStationDataTable5.csv', # United States Air Force Satellite Control Network
-'GroundStationDataTable6.csv', #Chinese Space Surveillance System
-'GroundStationDataTable7.csv', #Other Governmental Space Surveillance Systems
-'GroundStationDataTable8.csv', # International Scientific Optical Network Sensor
-'GroundStationDataTable9.csv'] # Satellite Laser Ranging Sites
-GSpaperData = list()
-for i in np.arange(len(fileNames)):
-    with open(os.path.join(GSpaperFilePath,fileNames[i]), 'r') as f:
-        lineReader = csv.reader(f,delimiter=',')
-        tmp = list()
-        for line in lineReader:
-            tmp.append(line)
-        GSpaperData.append(tmp)
-"""
-GSpaperData[fileNameIndex][len(number of stations)][columns]
-columns are:
-    0:"ID #" the station ID (sometimes multiplied by 10)
-    1:"Location" the name of the city and/or country
-    2:"Name"  Name of the place
-    3:"Type" type of observation station (typically Opt)
-    4:"Latitude" lat in deg
-    5:"Longitude" lon in deg
-    6:"Alt (m)" altitude in m above sea-level
-    7:"Open" date opened
-    8:"Close" date closed (mostly empty)
-    9:"Notes" uncoordinated notes
-In cases where the ID # were unknown, radars were given “555” prefixes,
-phased arrays a “666” prefix, and optical sensors were given a
-“999” prefix within each sensor network.
-For all other ID # in the thousands, the ID #'s' were multiplied by 10
-if they represent the central location of a sensor cluster
-"""
-
-
-colors =  ['b','b','r','g','b','r','grey',  'purple',   'orange']
-markers = ['o','o','p','d','d','d','o',     's',        'x']
-
+import vallado2014GroundStations # loads data extracted from Vallado2014
+import UDLsensorGroundStations # contains a query to all sensors to ellicit ground station locations
 
 # lon_0 is central longitude of projection.
 # resolution = 'c' means use crude resolution coastlines.
+plt.figure(1,figsize=(10,6))
 m = Basemap(projection='hammer',lon_0=0,resolution='c')
 m.drawcoastlines()
-m.fillcontinents(color='coral',lake_color='aqua')
+#m.fillcontinents(color='coral',lake_color='aqua')
+m.fillcontinents(color='white',lake_color='aqua')
 # draw parallels and meridians.
 m.drawparallels(np.arange(-90.,120.,30.))
 m.drawmeridians(np.arange(0.,420.,60.))
 
-for i in np.arange(len(GSpaperData)):
-    for j in np.arange(len(GSpaperData[i])):
-        if j == 0:
-            continue
-        lat = float(GSpaperData[i][j][4])
-        lon = float(GSpaperData[i][j][5])
-        x,y = m(lon, lat)
-        m.plot(x, y, color=colors[i], marker=markers[i], markersize=5)
+#Plot Vallado Ground Station Locations
+m = vallado2014GroundStations.plotVallado2014GS_basemap(m,vallado2014GroundStations.GSpaperData)
+
+#Plot Sensor Ground Station Locations
+m = UDLsensorGroundStations.plotUDLsensorsGS_basemap(m,UDLsensorGroundStations.UDLsensorData)
 
 m.drawmapboundary(fill_color='aqua')
-plt.title("Hammer Projection")
+plt.legend(loc='lower center', ncol=5, bbox_to_anchor=(0.5, -0.1),
+    fancybox=True, shadow=True)
+plt.title("Vallado Ground Station Locations")
+plt.tight_layout()
 plt.show(block=False)
+
+
+
+
+#POTENTIAL FUTURE IMPROVEMENT
+"""
+I had luck installing Cesium - looks a lot like the STK - AGI Earth viewing tool
+Be sure to run cd ~/Cesium and node server.js
+I could load the python module and do the following example from https://github.com/sinhrks/cesiumpy
+import cesiumpy
+v=cesiumpy.Viewer()
+v.entities.add(cesiumpy.Box(dimensions=(40e4, 30e4, 50e4),material=cesiumpy.color.RED, position=(-120, 40, 0)))
+v #In a jupyter notebook, this would display something (supposedly)
+v.to_html() #outputs <script> stuff to be put into an HTML but I can't get this to work right...
+
+Here are some links
+https://cesium.com/docs/tutorials/getting-started/
+https://cesiumpy.readthedocs.io/en/latest/
+https://cesiumpy.readthedocs.io/en/latest/basics.html
+Note I created an account to get a 'token' which can be found at https://cesium.com/ion/tokens
+
+An interesting example scraping locations from wikipedia
+https://cesiumpy.readthedocs.io/en/latest/examples.html
+
+#dont know why but here is some pysat stuff https://buildmedia.readthedocs.org/media/pdf/pysat/master/pysat.pdf
+"""
 

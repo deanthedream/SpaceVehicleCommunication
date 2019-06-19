@@ -3,6 +3,7 @@
 import numpy as np
 from grabUDL import grabUDL as grabUDL
 import astropy.units as u
+import getDateTime
 
 g = grabUDL()
 
@@ -10,12 +11,6 @@ g = grabUDL()
 #Example Query
 url_example = "https://unifieddatalibrary.com/udl/elset?epoch=%3E2018-11-01T00:00:00.000000Z&satNo=25544"
 dat_example, col_example = g.queryUDL(url_example)
-
-#Query All Sensors
-url_allSensors = "https://unifieddatalibrary.com/udl/sensor"
-dat_allSensors, col_allSensors = g.queryUDL(url_allSensors)
-arr_allSensors = dat_allSensors[col_allSensors]#.values # extracts data as an array
-
 
 #### QUERY HELP COMPONENTS ##################################
 #Query Help All Sensors
@@ -49,6 +44,107 @@ dat_elsethelp, col_elsethelp = g.queryUDL(url_elsethelp)
 dat_elsethelp['parameters'] = g.addAstropyUnits_to_queryHelp(dat_elsethelp)
 ##############################################################################
 
+###### Query All Sensors #####################################################
+url_allSensors = "https://unifieddatalibrary.com/udl/sensor"
+dat_allSensors, col_allSensors = g.queryUDL(url_allSensors)
+arr_allSensors = dat_allSensors[col_allSensors]#.values # extracts data as an array
+
+for key in ['classificationMarking', 'dataControl', 'dataMode', 'entity',
+       'idSensor', 'sensorName', 'sensorNumber', 'sensorObservationType',
+       'sensorType', 'sensorcharacteristics', 'sensorlimitsCollection',
+       'shortName', 'source', 'taskable']:
+    print('key: ' + key + ' data: ' + str(arr_allSensors[key][736]))
+
+##### Extracts list of lon-lat locations of all queried Sensors
+lon = list()
+lat = list()
+for i in np.arange(len(arr_allSensors['entity'])):
+    #All sensors have location field
+    #print(str(i) + ': ' + str(arr_allSensors['entity'][i]['location']))
+    if 'lat' in arr_allSensors['entity'][i]['location']:
+        lon.append(arr_allSensors['entity'][i]['location']['lat'])
+        lat.append(arr_allSensors['entity'][i]['location']['lon'])
+        print(str(i) + ', lat=' + str(arr_allSensors['entity'][i]['location']['lat']) + 
+            ', lon=' + str(arr_allSensors['entity'][i]['location']['lon']))
+
+
+#Extract set of sensor IDs
+#Valid keys to dat_allSensors
+# ['classificationMarking', 'dataControl', 'dataMode', 'entity',
+#        'idSensor', 'sensorName', 'sensorNumber', 'sensorObservationType',
+#        'sensorType', 'sensorcharacteristics', 'sensorlimitsCollection',
+#        'shortName', 'source', 'taskable']
+set_sensorIDS = arr_allSensors['idSensor']
+assert len(arr_allSensors['idSensor']) == len(set(arr_allSensors['idSensor'])), 'Error: There is a duplicate sensor'
+#print(len(set(arr_allSensors['sensorNumber']))) #this indicates not all sensor numbers are unique. There are multiple nan, but there are also multiple nan in the set... interesting
+##############################################################################
+
+#### Test Query specific sensor ############################################
+#ADS_RiverlandDingo_03
+#url_ADS_RiverlandDingo_03 = "https://unifieddatalibrary.com/udl/sensor/ADS_RiverlandDingo_03"
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'idSensor', '=', 'ADS_RiverlandDingo_03')
+#dat_ADS_RiverlandDingo_03, col_ADS_RiverlandDingo_03 = g.queryUDL(url_ADS_RiverlandDingo_03)
+#t1, t2 = g.queryUDL("https://unifieddatalibrary.com/udl/sensor/ADS_RiverlandDingo")
+
+#ADS_RiverlandDingo_03
+url_ADS_RiverlandDingo_03 = "https://unifieddatalibrary.com/udl/observation"
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'id', '=', '5')
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'idSensor', '=', 'ADS_RiverlandDingo_03')
+url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'obTime', '=>', getDateTime.formUDLtimeString(getDateTime.getULD_UTC(-200.0)))
+url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'maxResults', '=', 3)
+print(url_ADS_RiverlandDingo_03)
+dat_ADS_RiverlandDingo_03, col_ADS_RiverlandDingo_03 = g.queryUDL(url_ADS_RiverlandDingo_03)
+
+print(saltyburrito)
+
+
+url_1 = "https://unifieddatalibrary.com/udl/rfobservation"
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'id', '=', '5')
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'idSensor', '=', 'ADS_RiverlandDingo_03')
+url_1 = g.addQueryParameter(url_1, 'obTime', '=>', getDateTime.formUDLtimeString(getDateTime.getULD_UTC(-40.0)))
+url_1 = g.addQueryParameter(url_1, 'maxResults', '=', 3)
+print(url_1)
+dat_1, col_1 = g.queryUDL(url_1)
+print('dat_1')
+print(dat_1)
+
+url_2 = "https://unifieddatalibrary.com/udl/radarobservation"
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'id', '=', '5')
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'idSensor', '=', 'ADS_RiverlandDingo_03')
+url_2 = g.addQueryParameter(url_2, 'obTime', '=>', getDateTime.formUDLtimeString(getDateTime.getULD_UTC(-40.0)))
+url_2 = g.addQueryParameter(url_2, 'maxResults', '=', 3)
+print(url_2)
+dat_2, col_2 = g.queryUDL(url_2)
+print('dat_2')
+print(dat_2)
+
+url_3 = "https://unifieddatalibrary.com/udl/eoobservation"
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'id', '=', '5')
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'idSensor', '=', 'ADS_RiverlandDingo_03')
+url_3 = g.addQueryParameter(url_3, 'obTime', '=>', getDateTime.formUDLtimeString(getDateTime.getULD_UTC(-40.0)))
+url_3 = g.addQueryParameter(url_3, 'maxResults', '=', 3)
+print(url_3)
+dat_3, col_3 = g.queryUDL(url_3)
+print('dat_3')
+print(dat_3)
+
+url_4 = "https://unifieddatalibrary.com/udl/sensor"
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'id', '=', '5')
+#url_ADS_RiverlandDingo_03 = g.addQueryParameter(url_ADS_RiverlandDingo_03, 'idSensor', '=', 'ADS_RiverlandDingo_03')
+url_4 = g.addQueryParameter(url_4, 'obTime', '=>', getDateTime.formUDLtimeString(getDateTime.getULD_UTC(-40.0)))
+url_4 = g.addQueryParameter(url_4, 'maxResults', '=', 3)
+print(url_4)
+dat_4, col_4 = g.queryUDL(url_4)
+print('dat_4')
+print(dat_4)
+
+
+
+
+print(saltyburrito)
+#arr_aADS_RiverlandDingo_03 = dat_ADS_RiverlandDingo_03[col_ADS_RiverlandDingo_03]#.values # extracts data as an array
+
+#####################################################
 
 
 
@@ -57,8 +153,9 @@ possibleLocNames0 = [param['name'] for param in dat_senorshelp['parameters'] if 
 paramFields = [param for param in dat_senorshelp['parameters'] if param['name'] in ['lat',
  'lon', 'leftClockAngle', 'rightClockAngle', 'boresight', 'boresightOffAngle', 'maxDeviationAngle', 'leftGeoBeltLimit', 'rightGeoBeltLimit']]
 
-sensorLats = dat_allSensors['lat']
-sensorLons = dat_allSensors['lon']
+
+#sensorLats = dat_allSensors['lat'] #doesn;t work
+#sensorLons = dat_allSensors['lon']
 
 out = [dat for dat in dat_allSensors['sensorcharacteristics'] if not dat == []]
 #result unsuccessful. did not find lat and lon coords of sensors

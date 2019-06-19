@@ -7,7 +7,7 @@ and unpacking all data
 import requests, base64, pandas as pd
 import astropy.units as u
 import numpy as np
-
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 class grabUDL:
     def __init__(self):
@@ -16,7 +16,10 @@ class grabUDL:
         with open("/home/dean/Documents/AFRL2019/myString.txt", 'r') as f:
             myString = f.read().replace("\n","")
         self.creds = "Basic " + myString # myString is in a secured file so this is not pushed into a repo
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+        self.validQueryParameters = ['obTime','idSensor','maxResults']
+        self.validQueryOperations = ['=','=~','=<','=>','in','between']
 
     def queryUDL(self, url):
         """
@@ -94,3 +97,42 @@ class grabUDL:
             else:
                 print('unhandled unit: ' + str(params[i]['unitOfMeasure']))
         return params
+
+    def addQueryParameter(self, baseQuery, queryParameter, operation='=', value=None):
+        """
+        Intended to append a "query parameter" such as idSensor or obTime
+        To the UDL query string
+        Args:
+            baseQuery (string) - the base of the query string to append to
+        Returns:
+            queryURL (string) - the query URL with the "query parameter" added
+        """
+        #1 Check if ? or & needs to come next (if no ?, then &)
+        if '?' in baseQuery:
+            queryURL = '&'
+        else:
+            queryURL = '?'
+
+        #2 Check if queryParameter is a known parameter and append to URL
+        if not queryParameter in self.validQueryParameters:
+            print(queryParameter + ' Error: not in validQueryParameters')
+        queryURL = queryURL + queryParameter
+
+        #3 operation
+        assert operation in self.validQueryOperations, 'Error: operation not in set of operations'
+        if operation == 'in':
+            # if idSensor in {1,2,3}
+            #https://unifieddatalibrary.com/udl/observation?obTime=&idSensor=1%2C2%2C3
+            queryURL = queryURL + '='
+            for v in value:
+                queryURL = queryURL + str(v)
+                if not v == value[-1]:
+                    queryURL = queryURL + '%2C'
+        elif operation == 'between':
+            # if idSensor between 1 and 30
+            # https://unifieddatalibrary.com/udl/observation?obTime=&idSensor=1..30
+            queryURL = queryURL + '=' + str(value[0]) + '..' + str(value[1])
+        else:
+            queryURL = queryURL + operation + str(value)
+
+        return baseQuery + queryURL
