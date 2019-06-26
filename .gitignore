@@ -3,3 +3,10 @@
 *.txt
 .gitignore
 myString.txt
+*.zip
+*.gz
+*.html
+__pycache__/
+*.json
+*.csv
+*.raml
