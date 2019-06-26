@@ -8,6 +8,7 @@ import numpy as np
 from sgp4.earth_gravity import wgs72
 from sgp4.io import twoline2rv
 import matplotlib.pyplot as plt
+from astropy import constants as const
 
 # For a given TLE, try running 
 # sgp4 using from sgp4.io import twoline2rv
@@ -82,64 +83,163 @@ import pandas as pd
 #DELETE from matplotlib.ticker import StrMethodFormatter
 
 #Format data to turn into pandas frame
-pdData = {'Mean\nMotion\n(rad/min)':no, 'eccentricity':ecco, 'Inclination\n(rad)':inclo,\
+pdData = {'Mean\nMotion\n(rad/min)':no, 'Eccentricity':ecco, 'Inclination\n(rad)':inclo,\
     'Mean\nAnomaly\n(rad)':mo, 'Arg. of\nPerigee\n(rad)':argpo, 'Longitude\nAscending\nNode\n(rad)':nodeo,\
     'Semi-major\nAxis\n(Earth Radii)':a,'Apoapsis\nAltitude\n(Earth Radii)':alta, 'Periapsis\nAtlitude\n(Earth radii)':altp, 'Time Since\nEpoch (JD)':jdsatepoch}
 
 #### Plot Orbit Dist Scatter Matrix #########################################
-def plotOrbitDist_scatterMatrix(pdData):
-    """ Plots a scatter matrix of Keplerian Orbital Parameter Data
-    Args:
-        pdData (pandas dataframe object)
-    """
-    df = pd.DataFrame(data=pdData)
-    fignum = 651686214
-    plt.close(fignum)
-    fig = plt.figure(num=fignum,figsize=(12,12))
-    plt.rc('axes',linewidth=2)
-    plt.rc('lines',linewidth=2)
-    plt.rcParams['axes.linewidth']=2
-    plt.rc('font',weight='bold')
-    ax = plt.axes()
-    ax2 = scatter_matrix(df, alpha=0.1, diagonal='kde', ax=ax, **{'color':'black'})#, **kwds)
-    for ax_sub1 in ax2:
-        for ax_sub2 in ax_sub1:
-            label = ax_sub2.get_ylabel()
-            ax_sub2.set_ylabel(label,rotation=0, labelpad=40, weight='bold')
-            if 'Motion' in label: # the mean motion label has bad tickmarkers 0.050000000001 or something like that
-                tmplabels = ax_sub2.get_ymajorticklabels()
-                if not tmplabels[0].get_text() == '': #cant be empty for float() to work
-                    for i in np.arange(len(tmplabels)):
-                        txt = tmplabels[i].get_text()
-                        tmplabels[i].set_text("{:.3f}".format(np.round(float(txt),decimals=3)))
-                    ax_sub2.set_yticklabels(tmplabels)
-            label2 = ax_sub2.get_xlabel()
-            ax_sub2.set_xlabel(label2, weight='bold')
-    plt.show(block=False)
-    print('Done Plotting Scatter Matrix')
+# def plotOrbitDist_scatterMatrix(pdData):
+# """ Plots a scatter matrix of Keplerian Orbital Parameter Data
+# Args:
+#     pdData (pandas dataframe object)
+# """
+df = pd.DataFrame(data=pdData)
+fignum = 651686214
+plt.close(fignum)
+fig = plt.figure(num=fignum,figsize=(12,12))
+plt.rc('axes',linewidth=2)
+plt.rc('lines',linewidth=2)
+plt.rcParams['axes.linewidth']=2
+plt.rc('font',weight='bold')
+ax = plt.axes()
+ax2 = scatter_matrix(df, alpha=0.05, diagonal='kde', ax=ax, **{'color':'black'})#, **kwds)
+for ax_sub1 in ax2:
+    for ax_sub2 in ax_sub1:
+        label = ax_sub2.get_ylabel()
+        ax_sub2.set_ylabel(label,rotation=0, labelpad=40, weight='bold')
+        if 'Motion' in label: # the mean motion label has bad tickmarkers 0.050000000001 or something like that
+            tmplabels = ax_sub2.get_ymajorticklabels()
+            if not tmplabels[0].get_text() == '': #cant be empty for float() to work
+                for i in np.arange(len(tmplabels)):
+                    txt = tmplabels[i].get_text()
+                    tmplabels[i].set_text("{:.3f}".format(np.round(float(txt),decimals=3)))
+                ax_sub2.set_yticklabels(tmplabels)
+        label2 = ax_sub2.get_xlabel()
+        ax_sub2.set_xlabel(label2, weight='bold')
+plt.show(block=False)
+print('Done Plotting Scatter Matrix')
 
-    #### Save Scatter Data
-    import datetime
-    import re
-    import os
-    # Save to a File
-    PPoutpath = '/home/dean/Documents/AFRL2019'
-    folder = PPoutpath
-    date = str(datetime.datetime.now())
-    date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
-    fname = 'SpaceObjectOrbitalParameters_' + folder.split('/')[-1] + '_' + date
-    plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
-    plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-    #plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500) #doesnt plot transparent stuff
-    plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
-    print('Done Saving Scatter Matrix Figure')
-    ###########################################################################
+#OK### Plot Eccen. vs SMA relation based on R_earth Min
+#EXCLUSION REGION IS TOP LEFT
+SMA = np.linspace(start=ax2[1][6].get_xlim()[0],stop=ax2[1][6].get_xlim()[1],num=30) #Semi-Major Axis
+R_earth = 1. #In earth radii
+minAlt = 0.#LEO min alt is technically earth surface 400./6356. #assumes 400km is min LEO alt, Earth Radius is 6356 km from Wikipedia
+R = R_earth + minAlt
+ECCEN = 1. - R/SMA
+ax2[1][6].plot(SMA,ECCEN,color='b',alpha=0.4)
+plt.show(block=False)
+#OK### Plot SMA vs Eccen. relation based on R_earth Min
+#EXCLUSION REGION IS BOTTOM RIGHT
+ECCEN = np.linspace(start=ax2[6][1].get_xlim()[0],stop=ax2[6][1].get_xlim()[1],num=30) #Semi-Major Axis
+R_earth = 1. #In earth radii
+minAlt = 0.#LEO min alt is technically earth surface 400./6356. #assumes 400km is min LEO alt, Earth Radius is 6356 km from Wikipedia
+R = R_earth + minAlt
+SMA = R/(1.-ECCEN)
+ax2[6][1].plot(ECCEN,SMA,color='b',alpha=0.4)
+plt.show(block=False)
+#OK### Plot Eccen. vs Apoapsis relation based on R_earth Min
+#EXCLUSION REGION IS TOP LEFT
+APOAPSIS = np.linspace(start=ax2[1][7].get_xlim()[0],stop=ax2[1][7].get_xlim()[1],num=30) #Semi-Major Axis
+R_earth = 1. #In earth radii
+minAlt = 0.#LEO min alt is technically earth surface 400./6356. #assumes 400km is min LEO alt, Earth Radius is 6356 km from Wikipedia
+R = R_earth + minAlt
+ECCEN = 2.*APOAPSIS/(R+APOAPSIS) - 1.
+ax2[1][7].plot(APOAPSIS-R_earth,ECCEN,color='b',alpha=0.4)
+plt.show(block=False)
+#OK### Plot Apoapsis vs Eccen. relation based on R_earth Min
+#EXCLUSION REGION IS BOTTOM RIGHT
+ECCEN = np.linspace(start=ax2[7][1].get_xlim()[0],stop=ax2[7][1].get_xlim()[1],num=30) #eccentricity
+R_earth = 1. #In earth radii
+minAlt = 0.#LEO min alt is technically earth surface 400./6356. #assumes 400km is min LEO alt, Earth Radius is 6356 km from Wikipedia
+R = R_earth + minAlt
+APOAPSIS = R*(ECCEN+1.)/(1.-ECCEN)
+ax2[7][1].plot(ECCEN,APOAPSIS-R_earth,color='b',alpha=0.4)
+plt.show(block=False)
+#OK### Plot APOAPSIS vs SMA
+SMA = np.linspace(start=ax2[7][6].get_xlim()[0],stop=ax2[7][6].get_xlim()[1],num=30) #Semi-Major Axis
+APOAPSIS = SMA-R
+ax2[7][6].plot(SMA,APOAPSIS,color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot SMA vs APOAPSIS
+APOAPSIS = np.linspace(start=ax2[6][7].get_xlim()[0],stop=ax2[6][7].get_xlim()[1],num=30) #Semi-Major Axis
+SMA = APOAPSIS+R
+ax2[6][7].plot(APOAPSIS,SMA,color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot PERIAPSIS min on ECCEN vs PERIAPSIS plot, since periapsis can't be smaller than the earth radius
+R_earth = 1. #In earth radii
+minAlt = 0.#LEO min alt is technically earth surface 400./6356. #assumes 400km is min LEO alt, Earth Radius is 6356 km from Wikipedia
+R = R_earth + minAlt
+ax2[1][8].plot([R-R,R-R],[ax2[1][8].get_xlim()[0],ax2[1][8].get_xlim()[1]],color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot PERIAPSIS min on PERIAPSIS vs ECCEN, since periapsis can't be smaller than the earth radius
+R_earth = 1. #In earth radii
+minAlt = 0.#LEO min alt is technically earth surface 400./6356. #assumes 400km is min LEO alt, Earth Radius is 6356 km from Wikipedia
+R = R_earth + minAlt
+ECCEN = np.linspace(start=ax2[8][1].get_xlim()[0],stop=ax2[8][1].get_xlim()[1],num=30) #ECCEN RANGE
+ax2[8][1].plot(ECCEN,R-R + np.zeros(len(ECCEN)),color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot Minimum APOAPSIS vs PERIAPSIS, since APOAPSIS must be larger than PERIAPSIS #BOTTOM RIGHT EXCLUSION ZONE
+PERIAPSIS = np.linspace(start=ax2[7][8].get_xlim()[0],stop=ax2[7][8].get_xlim()[1],num=30) #PERIAPSIS raNge
+APOAPSIS = PERIAPSIS
+ax2[7][8].plot(PERIAPSIS,APOAPSIS,color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot MAXIMUM PERIAPSIS vs APOAPSIS, since APOAPSIS must be larger than PERIAPSIS #TOP LEFT EXCLUSION ZONE
+APOAPSIS = np.linspace(start=ax2[8][7].get_xlim()[0],stop=ax2[8][7].get_xlim()[1],num=30) #APOAPSIS raNge
+PERIAPSIS = APOAPSIS
+ax2[8][7].plot(APOAPSIS,PERIAPSIS,color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot Mean Motion vs SMA
+SMA = np.linspace(start=ax2[0][6].get_xlim()[0],stop=ax2[0][6].get_xlim()[1],num=30) #Semi-Major Axis
+mu = const.GM_earth
+MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/SMA**3.)
+ax2[0][6].plot(SMA,MEANMOTION,color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot SMA vs Mean Motion
+MEANMOTION = np.linspace(start=ax2[6][0].get_xlim()[0],stop=ax2[6][0].get_xlim()[1],num=30) #Mean Motion
+mu = const.GM_earth
+MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/SMA**3.)
+SMA = (mu.value*(60.*60.)/(const.R_earth.value**3.)/MEANMOTION**2.)**(1./3.)
+ax2[6][0].plot(MEANMOTION,SMA,color='r',alpha=0.4)
+plt.show(block=False)
+#OK### Plot Mean Motion vs APOAPSIS
+APOAPSIS = np.linspace(start=ax2[0][7].get_xlim()[0],stop=ax2[0][7].get_xlim()[1],num=30) #APOAPSIS
+MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(APOAPSIS-R_earth)**3.)
+ax2[0][7].plot(APOAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4) #should be a lower bound
+MEANMOTION = np.sqrt(8.*mu.value*(60.*60.)/(const.R_earth.value**3.)/(APOAPSIS-R_earth)**3.) #should be an upper limit
+ax2[0][7].plot(APOAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4)
+plt.show(block=False)
+#NOT TOTALLY SURE ABOUT THE X-AXIS VALUES. NEED TO DOUBLE CHECK WHETHER APOAPSIS HERE IS CORRECT
+#OK### Plot Mean Motion vs PERIAPSIS
+PERIAPSIS = np.linspace(start=ax2[0][8].get_xlim()[0],stop=ax2[0][8].get_xlim()[1],num=30) #PERIAPSIS
+ax2[0][8].plot(PERIAPSIS-R_earth,0. + np.zeros(len(PERIAPSIS)),color='r',alpha=0.4) # since 1-e_max = 0 
+MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(PERIAPSIS-R_earth)**3.)
+ax2[0][8].plot(PERIAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4) # since 1-e_min = 0 
+plt.show(block=False)
+
+
+
+#### Save Scatter Data
+import datetime
+import re
+import os
+# Save to a File
+PPoutpath = '/home/dean/Documents/AFRL2019'
+folder = PPoutpath
+date = str(datetime.datetime.now())
+date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+fname = 'SpaceObjectOrbitalParameters_' + folder.split('/')[-1] + '_' + date
+plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
+plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+#plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500) #doesnt plot transparent stuff
+plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
+print('Done Saving Scatter Matrix Figure')
+###########################################################################
 
 #comment-out to improve speed
 #plotOrbitDist_scatterMatrix(pdData)
 #############################################################################
 
-#### Plot Spacecraft Parameters in "contour matrix"
+#### Plot Spacecraft Parameters in "contour matrix" #######################
 from plotContourFromScatter import plotContourFromScatter
 from plotContourFromScatter import plotKDEfromScatter
 
@@ -150,7 +250,6 @@ for key1 in pdData.keys():
 #Create all axis options
 fignum=516841
 plt.close(fignum)
-#DELETE fig1 = plt.figure(num=fignum,figsize=(12,12))
 plt.rc('axes',linewidth=2)
 plt.rc('lines',linewidth=2)
 plt.rcParams['axes.linewidth']=2
