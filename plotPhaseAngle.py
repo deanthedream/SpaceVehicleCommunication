@@ -202,17 +202,19 @@ SMA = (mu.value*(60.*60.)/(const.R_earth.value**3.)/MEANMOTION**2.)**(1./3.)
 ax2[6][0].plot(MEANMOTION,SMA,color='r',alpha=0.4)
 plt.show(block=False)
 #OK### Plot Mean Motion vs APOAPSIS
+R_earth = 1.
 APOAPSIS = np.linspace(start=ax2[0][7].get_xlim()[0],stop=ax2[0][7].get_xlim()[1],num=30) #APOAPSIS
-MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(APOAPSIS-R_earth)**3.)
+MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(APOAPSIS)**3.)
 ax2[0][7].plot(APOAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4) #should be a lower bound
-MEANMOTION = np.sqrt(8.*mu.value*(60.*60.)/(const.R_earth.value**3.)/(APOAPSIS-R_earth)**3.) #should be an upper limit
+MEANMOTION = np.sqrt(8.*mu.value*(60.*60.)/(const.R_earth.value**3.)/(APOAPSIS)**3.) #should be an upper limit
 ax2[0][7].plot(APOAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4)
 plt.show(block=False)
 #NOT TOTALLY SURE ABOUT THE X-AXIS VALUES. NEED TO DOUBLE CHECK WHETHER APOAPSIS HERE IS CORRECT
 #OK### Plot Mean Motion vs PERIAPSIS
+R_earth = 1.
 PERIAPSIS = np.linspace(start=ax2[0][8].get_xlim()[0],stop=ax2[0][8].get_xlim()[1],num=30) #PERIAPSIS
 ax2[0][8].plot(PERIAPSIS-R_earth,0. + np.zeros(len(PERIAPSIS)),color='r',alpha=0.4) # since 1-e_max = 0 
-MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(PERIAPSIS-R_earth)**3.)
+MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(PERIAPSIS)**3.)
 ax2[0][8].plot(PERIAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4) # since 1-e_min = 0 
 plt.show(block=False)
 
@@ -228,10 +230,10 @@ folder = PPoutpath
 date = str(datetime.datetime.now())
 date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
 fname = 'SpaceObjectOrbitalParameters_' + folder.split('/')[-1] + '_' + date
-plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
+plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
 plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
 #plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500) #doesnt plot transparent stuff
-plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
+plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
 print('Done Saving Scatter Matrix Figure')
 ###########################################################################
 
@@ -282,5 +284,67 @@ for ikey1 in np.arange(len(pdData.keys())):
 plt.subplots_adjust(wspace=0, hspace=0)
 plt.show(block=False)
 print('done creating all contour plots')
+############################################################################################################
+
+
+#### Calculate PDF and InverseTransform Sampler From data #################################################################################
+from scipy.stats.kde import gaussian_kde
+from numpy import linspace
+from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
+
+
+kdes = list()
+sampler = list()
+sampledVals = list()
+for i in np.arange(len(pdData.keys())):
+    key1 = list(pdData.keys())[i]
+    kdes.append(gaussian_kde(pdData[key1]))
+    #we now have a list of KDEs for each of the keplerian orbital parameters
+    ########################################################################
+
+    xmin = ax2[i][i].get_xlim()[0]
+    xmax = ax2[i][i].get_xlim()[1]
+    xedges = np.linspace(start=xmin,stop=xmax,num=100)
+    cdf = np.vectorize(lambda x: kdes[i].integrate_box_1d(-np.inf, x))
+
+    pdfvals = kdes[i].pdf(xedges)
+    cdfvals = cdf(xedges)
+
+    nsamples=50000
+    sampler.append(InverseTransformSampler(kdes[i].pdf, xmin, xmax)) # contains the Inverse transform sampler for each parameter
+    sampledVals.append(sampler[i](nsamples)) # contains the list of sampled values for each parameter
+    #We now have a sample and samples for each parameter
+print('Done Calculating Single-Variable Inverse Transform Sampler')
+####################################################################################################################
+
+
+#### Calculate Visual Magnitude of Spacecraft ######################################################################
+
+####################################################################################################################
+
+
+
+
+
+# #### Calculate Rectlinear bivariate splines for the data #######################################################
+# from scipy import interpolate
+
+# #Just for Eccen vs SMA
+# xmin = ax2[1][6].get_xlim()[0]
+# xmax = ax2[1][6].get_xlim()[1]
+# xedges = np.linspace(start=xmin,stop=xmax,num=100)
+# xcent = 0.5*(xedges[1:]+xedges[:-1])
+# ymin = ax2[1][6].get_ylim()[0]
+# ymax = ax2[1][6].get_ylim()[1]
+# yedges = np.linspace(start=ymin,stop=ymax,num=100)
+# ycent = 0.5*(yedges[1:]+yedges[:-1])
+# xnew = np.hstack((0.0,xcent,xmax))
+# ynew = np.hstack((ymin,ycent,ymax))
+
+# Cpdf = np.pad(Cpdf,1,mode='constant')
+
+# #save interpolant to object
+# self.Cpdf = Cpdf
+# self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
 
 
