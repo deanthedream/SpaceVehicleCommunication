@@ -52,7 +52,7 @@ arr_allSensors = dat_allSensors[col_allSensors]#.values # extracts data as an ar
 for key in ['classificationMarking', 'dataControl', 'dataMode', 'entity',
        'idSensor', 'sensorName', 'sensorNumber', 'sensorObservationType',
        'sensorType', 'sensorcharacteristics', 'sensorlimitsCollection',
-       'shortName', 'source', 'taskable']:
+       'shortName', 'source']:#DELETE taskable caused errors, 'taskable']:
     print('key: ' + key + ' data: ' + str(arr_allSensors[key][736]))
 
 ##### Extracts list of lon-lat locations of all queried Sensors
