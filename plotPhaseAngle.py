@@ -77,6 +77,11 @@ jdsatepoch = [satData[key]['satelliteOBJ'].jdsatepoch for key in satData.keys()]
 print('Done Extracting Individual TLE Parameters')
 ########################################################################
 
+#### Calculate Eccentric Anomaly, E ####################################
+from EXOSIMS.util.eccanom import eccanom
+E = [eccanom(mo[i], ecco[i])[0] for i in np.arange(len(mo))] #eccentric anomaly
+########################################################################
+
 #### Plot Scatter Matrix ###############################################
 from pandas.plotting import scatter_matrix
 import pandas as pd 
@@ -85,7 +90,8 @@ import pandas as pd
 #Format data to turn into pandas frame
 pdData = {'Mean\nMotion\n(rad/min)':no, 'Eccentricity':ecco, 'Inclination\n(rad)':inclo,\
     'Mean\nAnomaly\n(rad)':mo, 'Arg. of\nPerigee\n(rad)':argpo, 'Longitude\nAscending\nNode\n(rad)':nodeo,\
-    'Semi-major\nAxis\n(Earth Radii)':a,'Apoapsis\nAltitude\n(Earth Radii)':alta, 'Periapsis\nAtlitude\n(Earth radii)':altp, 'Time Since\nEpoch (JD)':jdsatepoch}
+    'Semi-major\nAxis\n(Earth Radii)':a,'Apoapsis\nAltitude\n(Earth Radii)':alta, 'Periapsis\nAtlitude\n(Earth radii)':altp,\
+    'Time Since\nEpoch (JD)':jdsatepoch, 'Eccentric\nAnomaly\n(rad)':E}
 
 #### Plot Orbit Dist Scatter Matrix #########################################
 # def plotOrbitDist_scatterMatrix(pdData):
@@ -218,6 +224,7 @@ MEANMOTION = np.sqrt(mu.value*(60.*60.)/(const.R_earth.value**3.)/(PERIAPSIS)**3
 ax2[0][8].plot(PERIAPSIS-R_earth,MEANMOTION,color='r',alpha=0.4) # since 1-e_min = 0 
 plt.show(block=False)
 
+print('Done plotting Scatter Matrix Limits')
 
 
 #### Save Scatter Data
@@ -225,16 +232,20 @@ import datetime
 import re
 import os
 # Save to a File
-PPoutpath = '/home/dean/Documents/AFRL2019'
-folder = PPoutpath
-date = str(datetime.datetime.now())
-date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
-fname = 'SpaceObjectOrbitalParameters_' + folder.split('/')[-1] + '_' + date
-plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
-plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-#plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500) #doesnt plot transparent stuff
-plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
-print('Done Saving Scatter Matrix Figure')
+plotBOOL = False
+if plotBOOL==True:
+    PPoutpath = '/home/dean/Documents/AFRL2019'
+    folder = PPoutpath
+    date = str(datetime.datetime.now())
+    date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+    fname = 'SpaceObjectOrbitalParameters_' + folder.split('/')[-1] + '_' + date
+    plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
+    plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+    #plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500) #doesnt plot transparent stuff
+    plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
+    print('Done Saving Scatter Matrix Figure')
+else:
+    print('Skipping Saving Scatter Matrix Figure')
 ###########################################################################
 
 #comment-out to improve speed
@@ -242,12 +253,17 @@ print('Done Saving Scatter Matrix Figure')
 #############################################################################
 
 #### Plot Spacecraft Parameters in "contour matrix" #######################
+#### Generate Joint PDFs
 from plotContourFromScatter import plotContourFromScatter
 from plotContourFromScatter import plotKDEfromScatter
+from scipy import interpolate
 
-mDFL = {} # Create Struct to hold all plot objects
+# Create Lists to Hold PDF and vectorized PDFS
+mDFL = {}
 for key1 in pdData.keys():
     mDFL[key1] = {}
+    for key2 in pdData.keys():
+        mDFL[key1][key2] = {}
 
 #Create all axis options
 fignum=516841
@@ -256,7 +272,7 @@ plt.rc('axes',linewidth=2)
 plt.rc('lines',linewidth=2)
 plt.rcParams['axes.linewidth']=2
 plt.rc('font',weight='bold')
-outAX = plt.subplots(10,10, num=fignum, figsize=(12,12))
+outAX = plt.subplots(len(pdData.keys()),len(pdData.keys()), num=fignum, figsize=(12,12))
 outAX[0].subplots_adjust(bottom=0.15)
 #outAX[0] is the figure object
 for ikey1 in np.arange(len(pdData.keys())):
@@ -265,10 +281,28 @@ for ikey1 in np.arange(len(pdData.keys())):
         key2 = list(pdData.keys())[ikey2]
         if key1 == key2:
             outAX[1][ikey1][ikey2] = plotKDEfromScatter(pdData[key1], ax=outAX[1][ikey1][ikey1])
-            #mDFL[key1][key2] = plt.gca()
         else:
             outAX[1][ikey1][ikey2] = plotContourFromScatter(pdData[key1],pdData[key2],ax=outAX[1][ikey1][ikey2],nbins=11,figsize=(6,8))
-            #mDFL[key1][key2] = plt.gca()
+            #### Create Joint Probability Distributions
+            xmin = np.min(pdData[key1])
+            xmax = np.max(pdData[key1])
+            ymin = np.min(pdData[key2])
+            ymax = np.max(pdData[key2])
+            h, yedges, xedges = np.histogram2d(pdData[key1], pdData[key2], bins=1000, range=([ymin,ymax],[xmin,xmax]))
+            xcent = 0.5*(xedges[1:]+xedges[:-1])
+            ycent = 0.5*(yedges[1:]+yedges[:-1])
+            xnew = np.hstack((xmin,xcent,xmax))
+            ynew = np.hstack((ymin,ycent,ymax))
+            h = np.pad(h,1,mode='constant')
+            mDFL[key1][key2]['Hdist'] = h.T #stores 2d histogram
+            mDFL[key1][key2]['xnew'] = xnew[1:-1] #stores xnew
+            mDFL[key1][key2]['ynew'] = ynew[1:-1] #stores ynew
+            EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, h.T)
+            mDFL[key1][key2]['EVPOCpdf'] = EVPOCpdf #stores PDF
+            EVPOC = np.vectorize(EVPOCpdf.integral, otypes=[np.float64])
+            mDFL[key1][key2]['EVPOCpdf'] = EVPOC #stores vectorized PDF
+
+
         if not key2 == list(pdData.keys())[0]: # the y-axis keys
             outAX[1][ikey1][ikey2].get_yaxis().set_visible(False)
         else:
@@ -317,13 +351,67 @@ for i in np.arange(len(pdData.keys())):
 print('Done Calculating Single-Variable Inverse Transform Sampler')
 ####################################################################################################################
 
+#### Calculate 2d distribution for Eccentric Anomaly E #############################################################
+Eind = [i for i in np.arange(len(list(pdData.keys()))) if list(pdData.keys())[i] == 'Eccentric\nAnomaly\n(rad)'][0] #assumes only 1 found
+eccind = [i for i in np.arange(len(list(pdData.keys()))) if list(pdData.keys())[i] == 'Eccentricity'][0] #assumes only 1 found
 
-#### Calculate Visual Magnitude of Spacecraft ######################################################################
+Es = pdData[list(pdData.keys())[Eind]] # these are the calculated Eccentric Anomalies from the SC TLE data
+eccs = pdData[list(pdData.keys())[eccind]] # these are the calculated eccentricities from the SC TLE data
+
+xmin = np.min(Es)
+xmax = np.max(Es)
+ymin = np.min(eccs)
+ymax = np.max(eccs)
+Eshist = np.histogram(Es)
+eccshist = np.histogram(eccs)
+h, xedges, yedges = np.histogram2d(Es, eccs, bins=1000, range=([xmin,xmax],[ymin,ymax]),density=True)
+xcent = 0.5*(xedges[1:]+xedges[:-1])
+ycent = 0.5*(yedges[1:]+yedges[:-1])
+xnew = np.hstack((xmin,xcent,xmax))
+ynew = np.hstack((ymin,ycent,ymax))
+EeccPDF = h.T
+EeccPDF = np.pad(EeccPDF,1,mode='constant')
+EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, EeccPDF)
+EVPOC = np.vectorize(EVPOCpdf.integral, otypes=[np.float64])
+levels = np.linspace(start=h.min(),stop=h.max(),num=100,endpoint=True)
+
+plt.close(1242511)
+fig = plt.figure(num=1242511)
+#plt.contourf(xnew[1:-1],ynew[1:-1],h)
+plt.scatter(Es,eccs,alpha=0.1)
+plt.show(block=False)
+
+plt.close(1242512)
+fig = plt.figure(num=1242512)
+plt.contourf(xnew[1:-1],ynew[1:-1],h.T, levels=levels)
+plt.show(block=False)
+
+
+
+
+
+#sampler[Eind]
+Es = sampledVals[Eind] #the sampled values
+
+
+xmin = ax2[1][6].get_xlim()[0]
+xmax = ax2[1][6].get_xlim()[1]
+xedges = np.linspace(start=xmin,stop=xmax,num=100)
+xcent = 0.5*(xedges[1:]+xedges[:-1])
+ymin = ax2[1][6].get_ylim()[0]
+ymax = ax2[1][6].get_ylim()[1]
+yedges = np.linspace(start=ymin,stop=ymax,num=100)
+ycent = 0.5*(yedges[1:]+yedges[:-1])
+xnew = np.hstack((0.0,xcent,xmax))
+ynew = np.hstack((ymin,ycent,ymax))
+
+Cpdf = np.pad(Cpdf,1,mode='constant')
+
+#save interpolant to object
+self.Cpdf = Cpdf
+self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
 
 ####################################################################################################################
-
-
-
 
 
 # #### Calculate Rectlinear bivariate splines for the data #######################################################
@@ -346,5 +434,13 @@ print('Done Calculating Single-Variable Inverse Transform Sampler')
 # #save interpolant to object
 # self.Cpdf = Cpdf
 # self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
+
+
+
+#### Calculate Visual Magnitude of Spacecraft ######################################################################
+####################################################################################################################
+
+
+
 
 
