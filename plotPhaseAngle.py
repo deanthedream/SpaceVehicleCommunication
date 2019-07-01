@@ -326,7 +326,6 @@ from scipy.stats.kde import gaussian_kde
 from numpy import linspace
 from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
 
-
 kdes = list()
 sampler = list()
 sampledVals = list()
@@ -351,7 +350,7 @@ for i in np.arange(len(pdData.keys())):
 print('Done Calculating Single-Variable Inverse Transform Sampler')
 ####################################################################################################################
 
-#### Calculate 2d distribution for Eccentric Anomaly E #############################################################
+#### Calculate 2d distribution for Eccentric Anomaly E: Attempt 1 #############################################################
 Eind = [i for i in np.arange(len(list(pdData.keys()))) if list(pdData.keys())[i] == 'Eccentric\nAnomaly\n(rad)'][0] #assumes only 1 found
 eccind = [i for i in np.arange(len(list(pdData.keys()))) if list(pdData.keys())[i] == 'Eccentricity'][0] #assumes only 1 found
 
@@ -412,6 +411,19 @@ self.Cpdf = Cpdf
 self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
 
 ####################################################################################################################
+
+#### Calculate 2d distribution for Eccentric Anomaly E and ecentricity: Attempt 2 ##################################
+import sample2dDistribution.sample2dDistribution as sample2dDistribution
+EvsECCENsampler = sample2dDistribution(xedges,yedges,h.T)
+EvsECCENsampler.plotPMF()
+EvsECCENsampler.plotCMF()
+nsamples = 10**5.
+xind, yind, x, y = EvsECCENsampler.discreteInverseTransformSampler(nsamples)
+EvsECCENsampler.plot2dPMF(x,y)
+####################################################################################################################
+
+print(saltyburrito)
+
 
 
 # #### Calculate Rectlinear bivariate splines for the data #######################################################
