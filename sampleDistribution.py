@@ -113,5 +113,17 @@ class sampleDistribution:
 
         return xind, yind, x, y
 
-
+    def discreteInverseTransformSampler_given_1DCMF(self, cmf, xcent, nsamples):
+        """ This function samples a 1D CMF for nsamples
+        Args:
+            cmf (numpy array) - cumulative probability of x being below index
+            xcent (numpy array) - x values of each cmf value
+            nsamples (integer) - number of samples to generate
+        Returns:
+            xvalues (numpy array) - the x values generated
+        """
+        Ps = np.random.uniform(low=0., high=1.,size=nsamples) # generates uniform random numbers
+        cmfInds = np.asarray([np.where(Ps[i]<=cmf)[0][0] for i in np.arange(nsamples)]) # calculates the cmf inds
+        xvalues = np.asarray([xcent[cmfInd] for cmfInd in cmfInds])
+        return xvalues
 
