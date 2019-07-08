@@ -367,6 +367,8 @@ for ikey1 in np.arange(len(pdData.keys())):#ROWS
             EVPOCpdf = interpolate.RectBivariateSpline(np.linspace(start=xedges[0],stop=xedges[-1],num=bins,endpoint=True),\
                 np.linspace(start=yedges[0],stop=yedges[-1],num=bins,endpoint=True), hNORM/normalizing_constant, bbox=[xaxismin, xaxismax, yaxismin, yaxismax])#*((xaxismax - xaxismin)*(yaxismax - yaxismin)))##/np.sum(h))
             #NOTE: Using kx,ky,s in RBS is a bad idea
+            #NOTE: Could replace RectBivariateSpline with 2d Gaussian KDE from sklearn package https://towardsdatascience.com/simple-example-of-2d-density-plots-in-python-83b83b934f67
+            #indicates kernel can be integrated over the box under methods, https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.stats.gaussian_kde.html#scipy.stats.gaussian_kde
             mDFL[key1][key2]['EVPOCpdf'] = copy.deepcopy(EVPOCpdf) #stores PDF
             mDFL[key1][key2]['vectorizedEVPOCpdf'] = np.vectorize(copy.deepcopy(EVPOCpdf))
             #DELETE if key2 == 'Eccentricity' and key1 == 'Eccentric\nAnomaly\n(rad)':
@@ -576,11 +578,10 @@ plt.pause(2.)
 
 #### Calculate 2d distribution for Eccentric Anomaly E and ecentricity: Attempt 2 ##################################
 #This generates a random number of sampled from a 2d distribution consistent with the input distribution. 
-#COULD BE IMPROVED BY A RECTLINEAR BIVARIATE SPLINE
-import sample2dDistribution #.sample2dDistribution import sample2dDistribution
+import sampleDistribution
 key2 = list(mDFL.keys())[10]
 key1 = list(mDFL.keys())[1]
-EvsECCENsampler = sample2dDistribution.sample2dDistribution(counts=mDFL[key1][key2]['HdistNORM'],xcent=mDFL[key1][key2]['xcent'],ycent=mDFL[key1][key2]['ycent'])
+EvsECCENsampler = sampleDistribution.sampleDistribution(counts=mDFL[key1][key2]['HdistNORM'],xcent=mDFL[key1][key2]['xcent'],ycent=mDFL[key1][key2]['ycent'])
 #EvsECCENsampler.plotPMF()
 #EvsECCENsampler.plotCMF()
 nsamples = 10**4.
@@ -613,15 +614,19 @@ def calc_fdY(Y, xmin, xmax, EVPOCpdf, xnew):
 
     Returns:
         float:
-            Value of probability density
+            Value(s) of probability density
     
     """
     
     f = np.zeros(len(xmin))
     for k, dY in enumerate(Y):
-        f[k] = interpolate.InterpolatedUnivariateSpline(xnew,EVPOCpdf(xnew,dY),ext=1).integral(xmin[k],xmax[k])
+        #Calculate and apply a normalizing factor. (testing to see if this helps the univariate spline with negative numbers...)
+        normalizingFactor = EVPOCpdf.integral(xmin[k], xmax[k],np.min(Y),np.max(Y))
+        f[k] = interpolate.InterpolatedUnivariateSpline(xnew,EVPOCpdf(xnew,dY)/normalizingFactor,ext=1).integral(xmin[k],xmax[k])
+        #DELETE f[k] = interpolate.UnivariateSpline(xnew,EVPOCpdf(xnew,dY)/normalizingFactor,ext=1,s=500).integral(xmin[k],xmax[k]) # did not smooth like I wanted
         
     return f
+
 
 #### Calculate the probability distribution of r ####################################
 # FIRST plot a data cube for all values of r, since r(a,e,E)
@@ -669,25 +674,29 @@ plt.show(block=False)
 del eccen_rplot, SMA_rplot, E_rplot #these values should not be used elsewhere
 ######
 
-#### Calculate probability densities for each point
+#### Calculate probability densities for each point##############################
 #Calculate probability of e_i, a_i given e_i, E_i given e_i
 
 #Define keys
 ikey1 = 10 # Eccentric Anomaly Row
 ikey2 = 1 #eccentricity column
+ikey3 = 6 # semi major axis
 key1 = list(pdData.keys())[ikey1] #ok #Eccentric\nAnomaly\n(rad)
 key2 = list(pdData.keys())[ikey2] #ok #Eccentricity
+key3 = list(pdData.keys())[ikey3] # #semi major axis
 
 #Calculate value ranges
 eccen_range = np.linspace(start=np.min(pdData['Eccentricity']),stop=np.max(pdData['Eccentricity']),num=300, endpoint=True)
 E_range = np.linspace(start=np.min(pdData['Eccentric\nAnomaly\n(rad)']),stop=np.max(pdData['Eccentric\nAnomaly\n(rad)']),num=300, endpoint=True)
+SMA_range = np.linspace(start=np.min(pdData['Semi-major\nAxis\n(Earth Radii)']),stop=np.max(pdData['Semi-major\nAxis\n(Earth Radii)']),num=300, endpoint=True)
 
 #Verify the intgral over the eccentricity gaussian KDE is 1.
 eccen_normalization_constant = kdes[ikey2].integrate_box_1d(-np.inf, np.inf)
-
 #Calculate probabilities for each eccen in the r data cube
 P_eccen_rplot = kdes[ikey2](eccen_range)
 
+
+#### Demonstrate E vs eccentricity values are valid
 #Demonstrates Hdist sums to total # of SC
 print(str(np.sum(mDFL[key1][key2]['Hdist'])) + ' : this value should be approximately 17966 spacecraft')
 #Demonstrates HdistNORM does approximately sum to 1
@@ -699,32 +708,40 @@ EVPOCpdf = mDFL[key1][key2]['EVPOCpdf']
 xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key2,key1)
 print(str(EVPOCpdf.integral(xaxismin,xaxismax,yaxismin,yaxismax)) + ' : this value should be approximately 1')
 print(str(EVPOCpdf.integral(-np.inf,np.inf,-np.inf,np.inf)) + ' : this value should be approximately 1')
+####
 
 
+#### Example plot of P(E|e_i)
 num=len(mDFL[key1][key2]['ycent'])#1000
-Es = mDFL[key1][key2]['ycent']
+Es = mDFL[key1][key2]['ycent'] # these are the Eccentric Anomaly values to integrate over
 #eccen_center = sampler[ikey2](1) + np.zeros(num) # randomly select eccentricity center value
-eccen_center = 0.0005+ np.zeros(num) # randomly select eccentricity center value
-deccen = (np.max(pdData['Eccentricity']) - np.min(pdData['Eccentricity']))/1000. # this is arbitrarily chosen, could be smaller 
+eccen_center = 0.6005+ np.zeros(num) # randomly select eccentricity center value
+deccen = 0.025#(np.max(pdData['Eccentricity']) - np.min(pdData['Eccentricity']))/1000. # this is arbitrarily chosen, could be smaller 
 
 #This figure demonstrates the edge effects of the RBS and fdY calculation process 
 plt.close(6565984397877)
 fign = plt.figure(6565984397877)
+#Plot over Es range
 E_marginalized_eccen = calc_fdY( Es, eccen_center-deccen/2., eccen_center+deccen/2., mDFL[key1][key2]['EVPOCpdf'], mDFL[key1][key2]['xnew'])
 plt.plot(Es,E_marginalized_eccen,color='blue')
+#Plot over full Es Range
+num=1000
+eccen_center = 0.6005+ np.zeros(num) # randomly select eccentricity center value
 Es = np.linspace(start=np.min(pdData['Eccentric\nAnomaly\n(rad)']),stop=np.max(pdData['Eccentric\nAnomaly\n(rad)']),num=num,endpoint=True)
 E_marginalized_eccen = calc_fdY( Es, eccen_center-deccen/2., eccen_center+deccen/2., mDFL[key1][key2]['EVPOCpdf'], mDFL[key1][key2]['xnew'])
 plt.plot(Es,E_marginalized_eccen,color='red')
 plt.xlabel('E|e_i')
 plt.ylabel('Probability(E|e_i)')
+
+h, xedges = np.histogram(pdData['Eccentric\nAnomaly\n(rad)'])
+xcent = (xedges[1:]+xedges[:-1])/2.
+width=xcent[1]-xcent[0]
+plt.bar(xcent,h/np.sum(pdData['Eccentric\nAnomaly\n(rad)'])/width,width=width)
 plt.show(block=False)
 
+EVPOCpdf.integral(eccen_center-deccen/2., eccen_center+deccen/2.,np.min(pdData['Eccentric\nAnomaly\n(rad)']),np.max(pdData['Eccentric\nAnomaly\n(rad)']))
 
-#E_marginalized_eccen = mDFL[key1][key2]['EVPOCpdf'].integral()
-
-
-###########################################################################
-#Calculates Probability of E given eccen
+#Calculates Probability of E given eccen CONTOUR
 eccen_grid, E_grid = np.meshgrid(eccen_range,E_range) 
 P_E_given_eccen = mDFL[key1][key2]['vectorizedEVPOCpdf'](eccen_grid,E_grid)
 #NOTE: WHILE INTERESTING, THIS IS NOT USEFUL BECAUSE A SINGLE ECCENTRICITY IS GENERATED SO ALL ECCENTRICITIES MUST BE THE SAME
@@ -743,6 +760,110 @@ plt.ylabel('E in rad', weight='bold')
 #ax.set_zlabel('Probability')
 plt.colorbar(cmap='bwr')
 plt.show(block=False)
+
+plt.close(6184)
+figm = plt.figure(6184)
+E_marginalized_eccen2 = [E_marginalized_eccen[i] if E_marginalized_eccen[i] >= 0. else 0. for i in np.arange(len(E_marginalized_eccen))]
+E_marginalized_eccen2 = E_marginalized_eccen2/np.sum(E_marginalized_eccen2)
+E_cumsum_eccen = np.cumsum(E_marginalized_eccen2)
+plt.plot(np.linspace(start=0.,stop=2.*np.pi,num=len(E_cumsum_eccen),endpoint=True), E_cumsum_eccen)
+plt.xlabel('E (rad)', weight='bold')
+plt.ylabel('Cumulative Probability', weight='bold')
+plt.show(block=False)
+####
+
+
+
+
+#1. grab a random eccen
+Nsamples = 10000 # just randomly picking this number
+eccens = sampler[ikey2](Nsamples)
+#DELETE deccen = 0.025
+# Even area eccentricity bins (equal width*height)
+eout, ebins = pd.qcut(pdData['Eccentricity'],q=100,retbins=True)
+ebins[0] = 0. # need to set limits manually
+ebins[-1] = 1. # need to set limits manually
+#2. grab a random E given eccen
+xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key1,key1)
+Es = np.linspace(start=xaxismin,stop=xaxismax,num=134,endpoint=True)
+Ecumsum_given_ei = list()
+for i in np.arange(len(ebins)-1):
+    E_marginalized_eccen = calc_fdY( Es, ebins[i]+np.zeros(len(Es)), ebins[i+1]+np.zeros(len(Es)), mDFL[key1][key2]['EVPOCpdf'], mDFL[key1][key2]['xnew']) # calculates marginalized PDF
+    E_marginalized_eccen2 = [E_marginalized_eccen[i] if E_marginalized_eccen[i] >= 0. else 0. for i in np.arange(len(E_marginalized_eccen))] # sets all negative values to 1
+    E_marginalized_eccen2 = E_marginalized_eccen2/np.sum(E_marginalized_eccen2) #re-normalizes distribution
+    Ecumsum_given_ei.append(np.cumsum(E_marginalized_eccen2))
+    #DELETE E_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=E_cumsum_eccen, xcent=Es, nsamples=1))
+    #DELETE if np.mod(i,100) == 0:
+    print('E index: ' + str(i/(len(ebins)-1.)))
+
+E_given_ei = list()
+for i_e in np.arange(len(eccens)):
+    #find eccen ind
+    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] > ebins[:-1]))[0][0]
+    E_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=Ecumsum_given_ei[eccen_ind], xcent=Es, nsamples=1)[0])
+
+print('Done calculating E_given_ei')
+
+#3. grab a random SMA given eccen
+xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key3,key3)
+SMAs = np.linspace(start=xaxismin,stop=xaxismax,num=134,endpoint=True)
+SMAcumsum_given_ei = list()
+for i in np.arange(len(ebins)-1):
+    SMA_marginalized_eccen = calc_fdY( SMAs, ebins[i]+np.zeros(len(SMAs)), ebins[i+1]+np.zeros(len(SMAs)), mDFL[key3][key2]['EVPOCpdf'], mDFL[key3][key2]['xnew']) # calculates marginalized PDF
+    SMA_marginalized_eccen2 = [SMA_marginalized_eccen[i] if SMA_marginalized_eccen[i] >= 0. else 0. for i in np.arange(len(SMA_marginalized_eccen))] # sets all negative values to 1
+    SMA_marginalized_eccen2 = SMA_marginalized_eccen2/np.sum(SMA_marginalized_eccen2) #re-normalizes distribution
+    SMAcumsum_given_ei.append(np.cumsum(SMA_marginalized_eccen2))
+    print('SMA index: ' + str(i/(len(ebins)-1.)))
+SMA_given_ei = list()
+for i_e in np.arange(len(eccens)):
+    #find eccen ind
+    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] > ebins[:-1]))[0][0]
+    SMA_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=SMAcumsum_given_ei[eccen_ind], xcent=SMAs, nsamples=1)[0])
+print('Done calculating SMA_given_ei')
+
+def r_from_aeE(a, e, E):
+    """ Calculates the spacecraft distance from Earth given a,e,E
+    Arg:
+        a (float) - semi-major axis
+        e (float) - eccentricity 0 to 1
+        E (float) - Eccentric Anomaly 0 to 2pi
+    Returns:
+        r (float) - spacecraft distance from Earth
+    """
+    r = a*(1.-e**2.)/(1.+e*((np.cos(E)-e)/(1.-e*np.cos(E))))
+    return r
+
+#4. Calculate distribution of f(r)
+f_r = list()
+for i in np.arange(len(SMA_given_ei)):
+    f_r.append(r_from_aeE(SMA_given_ei[i], eccens[i], E_given_ei[i]))
+
+#### Plot f_r distributions vs various synthetic parameters
+fignum = 38411
+plt.close(fignum)
+fig = plt.figure(fignum)
+plt.scatter(E_given_ei,f_r, alpha=0.01)
+plt.xlabel('Eccentric Anomaly in (rad)')
+plt.ylabel('r in (Earth Radii)')
+plt.show(block=False)
+fignum = 38412
+plt.close(fignum)
+fig = plt.figure(fignum)
+plt.scatter(eccens,f_r, alpha=0.01)
+plt.xlabel('eccentricity')
+plt.ylabel('r in (Earth Radii)')
+plt.show(block=False)
+fignum = 38413
+plt.close(fignum)
+fig = plt.figure(fignum)
+plt.scatter(SMA_given_ei,f_r, alpha=0.01)
+plt.xlabel('Semi-major axis (Earth Radii)')
+plt.ylabel('r in (Earth Radii)')
+plt.show(block=False)
+
+###########################################################################
+
+
 #####################################################################################
 
 
