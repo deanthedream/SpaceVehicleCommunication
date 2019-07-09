@@ -710,7 +710,6 @@ print(str(EVPOCpdf.integral(xaxismin,xaxismax,yaxismin,yaxismax)) + ' : this val
 print(str(EVPOCpdf.integral(-np.inf,np.inf,-np.inf,np.inf)) + ' : this value should be approximately 1')
 ####
 
-
 #### Example plot of P(E|e_i)
 num=len(mDFL[key1][key2]['ycent'])#1000
 Es = mDFL[key1][key2]['ycent'] # these are the Eccentric Anomaly values to integrate over
@@ -775,10 +774,10 @@ plt.show(block=False)
 
 
 
+#TODO FUNCTIONIFY THIS
 #1. grab a random eccen
-Nsamples = 10000 # just randomly picking this number
+Nsamples = 20000 # just randomly picking this number
 eccens = sampler[ikey2](Nsamples)
-#DELETE deccen = 0.025
 # Even area eccentricity bins (equal width*height)
 eout, ebins = pd.qcut(pdData['Eccentricity'],q=100,retbins=True)
 ebins[0] = 0. # need to set limits manually
@@ -792,8 +791,6 @@ for i in np.arange(len(ebins)-1):
     E_marginalized_eccen2 = [E_marginalized_eccen[i] if E_marginalized_eccen[i] >= 0. else 0. for i in np.arange(len(E_marginalized_eccen))] # sets all negative values to 1
     E_marginalized_eccen2 = E_marginalized_eccen2/np.sum(E_marginalized_eccen2) #re-normalizes distribution
     Ecumsum_given_ei.append(np.cumsum(E_marginalized_eccen2))
-    #DELETE E_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=E_cumsum_eccen, xcent=Es, nsamples=1))
-    #DELETE if np.mod(i,100) == 0:
     print('E index: ' + str(i/(len(ebins)-1.)))
 
 E_given_ei = list()
@@ -842,53 +839,110 @@ for i in np.arange(len(SMA_given_ei)):
 fignum = 38411
 plt.close(fignum)
 fig = plt.figure(fignum)
-plt.scatter(E_given_ei,f_r, alpha=0.01)
-plt.xlabel('Eccentric Anomaly in (rad)')
-plt.ylabel('r in (Earth Radii)')
+plt.scatter(E_given_ei,f_r, alpha=0.01, color='blue')
+plt.title('Simulated Data', weight='bold')
+plt.xlabel('Eccentric Anomaly in (rad)', weight='bold')
+plt.ylabel('r in (Earth Radii)', weight='bold')
 plt.show(block=False)
 fignum = 38412
 plt.close(fignum)
 fig = plt.figure(fignum)
-plt.scatter(eccens,f_r, alpha=0.01)
-plt.xlabel('eccentricity')
-plt.ylabel('r in (Earth Radii)')
+plt.scatter(eccens,f_r, alpha=0.01, color='blue')
+plt.title('Simulated Data', weight='bold')
+plt.xlabel('eccentricity', weight='bold')
+plt.ylabel('r in (Earth Radii)', weight='bold')
 plt.show(block=False)
 fignum = 38413
 plt.close(fignum)
 fig = plt.figure(fignum)
-plt.scatter(SMA_given_ei,f_r, alpha=0.01)
-plt.xlabel('Semi-major axis (Earth Radii)')
-plt.ylabel('r in (Earth Radii)')
+plt.scatter(SMA_given_ei,f_r, alpha=0.01, color='black')
+plt.title('Simulated Data', weight='bold')
+plt.xlabel('Semi-major axis (Earth Radii)', weight='bold')
+plt.ylabel('r in (Earth Radii)', weight='bold')
 plt.show(block=False)
-
 ###########################################################################
 
 
-#####################################################################################
+#### Plot distribution of Actual spacecraft r #############################
+real_r = list()
+for i in np.arange(len(pdData['Semi-major\nAxis\n(Earth Radii)'])):
+    real_r.append(r_from_aeE(pdData['Semi-major\nAxis\n(Earth Radii)'][i], pdData['Eccentricity'][i], pdData['Eccentric\nAnomaly\n(rad)'][i]))
+
+fignum = 438411
+plt.close(fignum)
+fig = plt.figure(fignum)
+plt.scatter(pdData['Eccentric\nAnomaly\n(rad)'],real_r, alpha=0.01, color='black')
+plt.title('Real Spacecraft', weight='bold')
+plt.xlabel('Eccentric Anomaly in (rad)', weight='bold')
+plt.ylabel('r in (Earth Radii)', weight='bold')
+plt.show(block=False)
+fignum = 438412
+plt.close(fignum)
+fig = plt.figure(fignum)
+plt.scatter(pdData['Eccentricity'],real_r, alpha=0.01, color='black')
+plt.title('Real Spacecraft', weight='bold')
+plt.xlabel('eccentricity', weight='bold')
+plt.ylabel('r in (Earth Radii)', weight='bold')
+plt.show(block=False)
+fignum = 438413
+plt.close(fignum)
+fig = plt.figure(fignum)
+plt.scatter(pdData['Semi-major\nAxis\n(Earth Radii)'],real_r, alpha=0.01, color='black')
+plt.title('Real Spacecraft', weight='bold')
+plt.xlabel('Semi-major axis (Earth Radii)', weight='bold')
+plt.ylabel('r in (Earth Radii)', weight='bold')
+plt.show(block=False)
+###########################################################################
 
 
+#### Beta angle For different observing Regimes ########################################
+# rnorm_sun_sc = r_sun_sc/np.linalg.norm(r_sun_sc)
+# rnorm_gs_sc = r_gs_sc/np.linalg.norm(r_gs_sc)
+# #Sun pointing
+# nhat = rnorm_sun_sc
+# #Earth Centered Inertial Pointing
+# nhat = r_earth_sc/np.linalg.norm(r_earth_sc)
+# #Ground station pointing
+# nhat = rnorm_gs_sc
+# #maximal reflected energy
+# nhat = (rnorm_sun_sc + rnorm_gs_sc)/2.
+# #random direction
+theta0to180 = np.linspace(start=0.,stop=np.pi,num=300,endpoint=True) # angle between rnorm_sun_sc and rnorm_gs_sc
+theta0to90 = np.linspace(start=0.,stop=np.pi/2.,num=300,endpoint=True) # angle between rnorm_sun_sc and rnorm_gs_sc
+theta90to180 = np.linspace(start=np.pi/2.,stop=np.pi,num=300,endpoint=True) # angle between rnorm_sun_sc and rnorm_gs_sc
+fignum = 998998
+plt.close(fignum)
+plt.figure(fignum)
+plt.rc('axes',linewidth=2)
+plt.rc('lines',linewidth=2)
+plt.rcParams['axes.linewidth']=2
+plt.rc('font',weight='bold')
+plt.plot(theta0to90*180./np.pi,0.5+np.cos(theta0to90*2.)/2., color='orange', label='Sun Pointing')
+plt.plot(theta90to180*180./np.pi,np.zeros(len(theta90to180)), color='orange')
+plt.plot(theta0to90*180./np.pi,0.5+np.cos(theta0to90*2.)/2., color='green', linestyle='--', label='Ground Station Pointing')
+plt.plot(theta90to180*180./np.pi,np.zeros(len(theta90to180)), color='green', linestyle='--')
+plt.plot(theta0to180*180./np.pi,np.cos(theta0to180/2.)**2., color='purple', label='Maximum Energy Pointing')
+plt.xlabel('Sun-SC-GS Angle (deg)', weight='bold')
+plt.ylabel(r'$\beta_\odot \times \beta_{GS}$', weight='bold')
+plt.legend()
+plt.show(block=False)
 
-# #### Calculate Rectlinear bivariate splines for the data #######################################################
-# from scipy import interpolate
-
-# #Just for Eccen vs SMA
-# xmin = ax2[1][6].get_xlim()[0]
-# xmax = ax2[1][6].get_xlim()[1]
-# xedges = np.linspace(start=xmin,stop=xmax,num=100)
-# xcent = 0.5*(xedges[1:]+xedges[:-1])
-# ymin = ax2[1][6].get_ylim()[0]
-# ymax = ax2[1][6].get_ylim()[1]
-# yedges = np.linspace(start=ymin,stop=ymax,num=100)
-# ycent = 0.5*(yedges[1:]+yedges[:-1])
-# xnew = np.hstack((0.0,xcent,xmax))
-# ynew = np.hstack((ymin,ycent,ymax))
-
-# Cpdf = np.pad(Cpdf,1,mode='constant')
-
-# #save interpolant to object
-# self.Cpdf = Cpdf
-# self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
-
+# Save to a File
+plotBOOL = False
+if plotBOOL==True:
+    PPoutpath = '/home/dean/Documents/AFRL2019'
+    folder = PPoutpath
+    date = str(datetime.datetime.now())
+    date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+    fname = 'BetaValue_' + folder.split('/')[-1] + '_' + date
+    plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
+    plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+    plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
+    print('Done Saving Beta Value Figure')
+    del PPoutpath, folder, fname
+else:
+    print('Skipping Saving Beta Value Figure')
+#######################################################################################
 
 
 #### Calculate Visual Magnitude of Spacecraft ######################################################################
