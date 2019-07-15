@@ -10,6 +10,30 @@ import os
 import csv
 import vallado2014GroundStations # loads data extracted from Vallado2014
 import UDLsensorGroundStations # contains a query to all sensors to ellicit ground station locations
+import datetime
+import re
+import os
+
+
+plotBOOL = True
+def SaveToFile(UniqueName, plotBOOL=False):
+    plt.gcf()
+    plt.gca()
+    # Save to a File
+    if plotBOOL==True:
+        PPoutpath = '/home/dean/Documents/AFRL2019'
+        folder = PPoutpath
+        date = str(datetime.datetime.now())
+        date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+        fname = UniqueName + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
+        print('Done Saving ' + UniqueName + ' Figure')
+        del PPoutpath, folder, fname
+    else:
+        print('Skipping Saving ' + UniqueName + ' Figure')
+
 
 # lon_0 is central longitude of projection.
 # resolution = 'c' means use crude resolution coastlines.
@@ -34,7 +58,7 @@ plt.legend(loc='lower center', ncol=5, bbox_to_anchor=(0.5, -0.1),
 plt.title("Vallado Ground Station Locations")
 plt.tight_layout()
 plt.show(block=False)
-
+SaveToFile('ValladoGroundStationLocations_', plotBOOL=plotBOOL)
 
 
 

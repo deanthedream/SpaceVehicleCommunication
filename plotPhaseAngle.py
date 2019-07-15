@@ -1119,6 +1119,8 @@ plt.tight_layout()
 plt.show(block=False)
 # Save to a File
 SaveToFile('SimReal3Dvisualization_', plotBOOL=True)#plotBOOL)
+######################################################################################################
+
 #### Calculate Visual Magnitude of Spacecraft ######################################################################
 
 ####################################################################################################################
@@ -1129,7 +1131,7 @@ SaveToFile('SimReal3Dvisualization_', plotBOOL=True)#plotBOOL)
 #### Performing the triple integral ##################################################
 from scipy.integrate import quad as quad
 
-def f_phi_theta_h():
+def f_rho(X,Y,Z):
     return taco
 
 def f_phi_theta():
