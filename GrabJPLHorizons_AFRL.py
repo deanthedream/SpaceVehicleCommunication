@@ -10,7 +10,7 @@ import json
 #import re #vestigal
 #JPL Horizons query fields defined in ftp://ssd.jpl.nasa.gov/pub/ssd/horizons_batch_example.long
 
-def extractPositions(bodyName, START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA):
+def extractPositions(bodyName, START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA='YES', MAKE_EPHEM='NO',OUT_UNITS='KM-S',TABLE_TYPE='VECTOR',CENTER='@Sun'):
     """Extracts body positions over the specified time range with the specified step sizes
     Args:
         bodyName (string) - one of the set of body names in bodyNametoNAIFID
@@ -22,10 +22,28 @@ def extractPositions(bodyName, START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA):
     """
     DATA =  {'body_name':bodyName}#Create Data Structure
     DATA['naifID'] = bodyNametoNAIFID(bodyName)#Grab NAIF ID
-    html = queryJPLHorizons(DATA['naifID'], START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA)#Query JPL Horizons
-    #Extract Times
-    #Extract r_body_sun
+    html = queryJPLHorizons(DATA['naifID'], START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA, MAKE_EPHEM, OUT_UNITS, TABLE_TYPE, CENTER)#Query JPL Horizons
+
+    html2 = html.split('\n')
+    indexSOE = [i for i in np.arange(len(html2)) if "SOE" in html2[i]][0]
+    indexEOE = [i for i in np.arange(len(html2)) if "EOE" in html2[i]][0]
+    dataArray = html2[indexSOE+1:indexEOE]
+    dataArraySplit = [dataArray[i].split(',') for i in np.arange(len(dataArray))]
+    #Data format ['JDTDB','Calendar Date','x','y','z','vx','vy','vz','LT','RG','RR']
+    r_body_sun = np.asarray([np.asarray([float(dataArraySplit[i][2]),float(dataArraySplit[i][3]),float(dataArraySplit[i][4])]) for i in np.arange(len(dataArraySplit))]) #Extract r_body_sun
+    times = [float(dataArraySplit[i][0]) for i in np.arange(len(dataArraySplit))] #Extract Times
+
     return times, r_body_sun
+
+def parseEphemeris(html):
+    """
+    Args:
+        html - designed to take in the html returned by a queryJPLHorizons function call
+    Return:
+        parsedObject
+    """
+    html2 = html.split('\n')
+    return parsedObject
 
 #MIGHT NEED TO CREATE A FUNCTION TO SPLINE THE ABOVE FOR INTERPOLATION PURPOSES...
 
@@ -90,7 +108,7 @@ def bodyNametoNAIFID(bodyName):
     naifID = naifIDS[bodyName]
     return naifID
 
-def queryJPLHorizons(naifID, START_TIME='2000-01-01', STOP_TIME='2000-12-31', STEP_SIZE='15%20d', OBJ_DATA='YES'):
+def queryJPLHorizons(naifID, START_TIME='2000-01-01', STOP_TIME='2000-12-31', STEP_SIZE='15%20d', OBJ_DATA='YES', MAKE_EPHEM='NO',OUT_UNITS='KM-S',TABLE_TYPE='OBSERVER',CENTER='@Sun'):
     # """Queries JPL Horizons for Object Data Page DATA
     # Args:
     #     naifID (int) - naif ID of body
@@ -98,14 +116,15 @@ def queryJPLHorizons(naifID, START_TIME='2000-01-01', STOP_TIME='2000-12-31', ST
     #     rawHTML (string) - string containing all information responded by url query
     # """
     #List of Input Paramter Names
-    inputNames = ['COMMAND','OBJ_DATA','MAKE_EPHEM','TABLE_TYPE','START_TIME','STOP_TIME','STEP_SIZE','QUANTITIES','CSV_FORMAT']
+    inputNames = ['COMMAND','OBJ_DATA','MAKE_EPHEM','TABLE_TYPE','START_TIME','STOP_TIME','STEP_SIZE','QUANTITIES','CSV_FORMAT','OUT_UNITS','CENTER']
 
     #Struct of Coded Inputs
-    inputs = {'COMMAND': str(naifID), 'OBJ_DATA' : OBJ_DATA ,'MAKE_EPHEM': 'NO', 'TABLE_TYPE': 'OBSERVER', 'START_TIME': START_TIME,
-            'STOP_TIME': STOP_TIME, 'STEP_SIZE':STEP_SIZE, 'QUANTITIES': '1,9,20,23,24', 'CSV_FORMAT': 'YES'}
+    inputs = {'COMMAND': str(naifID), 'OBJ_DATA' : OBJ_DATA ,'MAKE_EPHEM': MAKE_EPHEM, 'TABLE_TYPE': TABLE_TYPE, 'START_TIME': START_TIME,
+            'STOP_TIME': STOP_TIME, 'STEP_SIZE':STEP_SIZE, 'QUANTITIES': '1,9,20,23,24', 'CSV_FORMAT': 'YES', 'OUT_UNITS':OUT_UNITS, 'CENTER':CENTER}
 
     #Static Components of URL
-    staticString = ["https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1&COMMAND='","'&OBJ_DATA='","'&MAKE_EPHEM='","'&TABLE_TYPE='","'&START_TIME='","'&STOP_TIME='","'&STEP_SIZE='","'&QUANTITIES='","'&CSV_FORMAT='","'"]
+    staticString = ["https://ssd.jpl.nasa.gov/horizons_batch.cgi?batch=1&COMMAND='","'&OBJ_DATA='","'&MAKE_EPHEM='","'&TABLE_TYPE='","'&START_TIME='",\
+        "'&STOP_TIME='","'&STEP_SIZE='","'&QUANTITIES='","'&CSV_FORMAT='","'&OUT_UNITS='","'&CENTER='","'"]
 
     #### Generate URL Command from Inputs and Static Components
     myURL = ''#Initialize Command String
@@ -337,5 +356,6 @@ bodyDATA = json.dumps(bodyDATA)
 # NOTE COULD USE TLIST to get discrete times for query which would need times in MJD
 START_TIME = '2019-04-25'
 STOP_TIME = '2019-04-30'
-STEP_SIZE = '1%d'
-extractPositions(body_name, START_TIME, STOP_TIME, STEP_SIZE, 'NO')
+STEP_SIZE = '60min'
+body_name = 'EARTH'
+extractPositions(body_name, START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA='NO', MAKE_EPHEM='YES', OUT_UNITS='KM-S')
