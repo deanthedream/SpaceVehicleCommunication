@@ -19,6 +19,32 @@ from EXOSIMS.util.eccanom import eccanom
 from pandas.plotting import scatter_matrix
 import pandas as pd 
 
+#### Calculate True Anomaly From E and e
+def v_from_Ee(E,e):
+    """ From Dmitry's paper, can calculate true anomaly from eccentricity and Eccentric Anomaly
+    Args:
+        E (float) - Eccentric Anomaly in range [0,2pi] 
+        e (float) - eccentricity in range [0,1)
+    Returns:
+        v (float) - true anomaly in range [0,2pi]
+    """
+    v = 2.*np.arctan2(np.sqrt(1.+e)*np.sin(E/2.),np.sqrt(1.-e)*np.cos(E/2.))
+    return v
+
+#### Trim to 0-to-2pi
+def trim_0to2pi(ang):
+    """
+    Args:
+        ang (float) - in radians
+    Returns:
+        ang (float) - in 0 to 2pi
+    """
+    if ang > 2.*np.pi:
+        ang = np.mod(ang,2.*np.pi)
+    elif ang < 0.:
+        ang = np.mod(1000.*np.pi+ang,2.*np.pi)
+    return ang
+
 plotBOOL = False
 def SaveToFile(UniqueName, plotBOOL=False):
     plt.gcf()
@@ -115,25 +141,29 @@ else:
     ########################################################################
 
     #### Calculate Eccentric Anomaly, E ####################################
-    #DELETE from EXOSIMS.util.eccanom import eccanom
     E = [eccanom(mo[i], ecco[i])[0] for i in np.arange(len(mo))] #eccentric anomaly
     ########################################################################
 
+    #### Calculate True Anomaly, v #########################################
+    v = [v_from_Ee(E[i],ecco[i]) for i in np.arange(len(mo))] #True anomaly
+    ########################################################################
+
+    #### Omega + v #########################################################
+    omega_plus_v = [trim_0to2pi(argpo[i]+v[i]) for i in np.arange(len(mo))] # omega plus v
+    ########################################################################
+
     #### Plot Scatter Matrix ###############################################
-    #DELETE from pandas.plotting import scatter_matrix
-    #DELETE import pandas as pd 
 
     #Format data to turn into pandas frame
     pdData = {'Mean\nMotion\n(rad/min)':no, 'Eccentricity':ecco, 'Inclination\n(rad)':inclo,\
         'Mean\nAnomaly\n(rad)':mo, 'Arg. of\nPerigee\n(rad)':argpo, 'Longitude\nAscending\nNode\n(rad)':nodeo,\
         'Semi-major\nAxis\n(Earth Radii)':a,'Apoapsis\nAltitude\n(Earth Radii)':alta, 'Periapsis\nAtlitude\n(Earth radii)':altp,\
-        'Time Since\nEpoch (JD)':jdsatepoch, 'Eccentric\nAnomaly\n(rad)':E}
-    del no, ecco, inclo, mo, argpo, nodeo, a, alta, altp, jdsatepoch, E
+        'Time Since\nEpoch (JD)':jdsatepoch, 'Eccentric\nAnomaly\n(rad)':E, 'True\nAnomaly\n(rad)':v, 'omega\n+\nv':omega_plus_v}
+    del no, ecco, inclo, mo, argpo, nodeo, a, alta, altp, jdsatepoch, E, v, omega_plus_v
 
     print('Saving pdData to ' + os.path.join(filepath,pandasFile))
     with open(os.path.join(filepath,pandasFile), 'wb') as f:
         pickle.dump(pdData, f)
-
 
 #### Plot Orbit Dist Scatter Matrix #########################################
 def plotOrbitDist_scatterMatrix(pdData, plotBOOL):
@@ -298,7 +328,6 @@ if plotBOOL == True:
 #############################################################################
 
 
-
 #### Plot Spacecraft Parameters in "contour matrix" #######################
 #### Generate Joint PDFs
 from plotContourFromScatter import plotContourFromScatter
@@ -317,7 +346,7 @@ def get_pdDataLimits(pdData,key1,key2):
     #0 to 1 limits
     if key1 == 'Eccentricity':
         xaxismin = 0.
-        xaxismax = 1.
+        xaxismax = 1.-1e-8 # because this shouldn't ever be 1.
     elif key2 == 'Eccentricity':
         yaxismin = 0.
         yaxismax = 1.
@@ -473,28 +502,52 @@ from scipy.stats.kde import gaussian_kde
 from numpy import linspace
 from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
 
-kdes = list()
-sampler = list()
-sampledVals = list()
-for i in np.arange(len(pdData.keys())):
-    key1 = list(pdData.keys())[i]
-    kdes.append(gaussian_kde(pdData[key1]))
-    #we now have a list of KDEs for each of the keplerian orbital parameters
-    ########################################################################
+invTransFile = "invTrans.pkl"
+kdeFile = "kde.pkl"
+sampledValsFile = "sampledVals.pkl"
+filepath = "/home/dean/Documents/AFRL2019"
+if os.path.exists(os.path.join(filepath,invTransFile)) and os.path.exists(os.path.join(filepath,kdeFile)) and os.path.exists(os.path.join(filepath,sampledValsFile)):
+    with open(os.path.join(filepath,invTransFile), 'rb') as f:
+        sampler = pickle.load(f)
+    print('Loaded invTransFile from ' + os.path.join(filepath,invTransFile))
+    with open(os.path.join(filepath,kdeFile), 'rb') as f:
+        kdes = pickle.load(f)
+    print('Loaded kdeFile from ' + os.path.join(filepath,kdeFile))
+    with open(os.path.join(filepath,sampledValsFile), 'rb') as f:
+        sampledVals = pickle.load(f)
+    print('Loaded sampledValsFile from ' + os.path.join(filepath,sampledValsFile))
+else:
+    kdes = list()
+    sampler = list()
+    sampledVals = list()
+    for i in np.arange(len(pdData.keys())):
+        key1 = list(pdData.keys())[i]
+        kdes.append(gaussian_kde(pdData[key1]))
+        #we now have a list of KDEs for each of the keplerian orbital parameters
+        ########################################################################
 
-    xmin = np.min(pdData[key1])#ax2[i][i].get_xlim()[0]
-    xmax = np.max(pdData[key1])#ax2[i][i].get_xlim()[1]
-    xedges = np.linspace(start=xmin,stop=xmax,num=100)
-    cdf = np.vectorize(lambda x: kdes[i].integrate_box_1d(-np.inf, x))
+        xmin = np.min(pdData[key1])#ax2[i][i].get_xlim()[0]
+        xmax = np.max(pdData[key1])#ax2[i][i].get_xlim()[1]
+        xedges = np.linspace(start=xmin,stop=xmax,num=100)
+        cdf = np.vectorize(lambda x: kdes[i].integrate_box_1d(-np.inf, x))
 
-    pdfvals = kdes[i].pdf(xedges)
-    cdfvals = cdf(xedges)
+        pdfvals = kdes[i].pdf(xedges)
+        cdfvals = cdf(xedges)
 
-    nsamples=50000
-    sampler.append(InverseTransformSampler(kdes[i].pdf, xmin, xmax)) # contains the Inverse transform sampler for each parameter
-    sampledVals.append(sampler[i](nsamples)) # contains the list of sampled values for each parameter
-    #We now have a sample and samples for each parameter
-    del key1, xmin, xmax, xedges, cdf, pdfvals, cdfvals
+        nsamples=50000
+        sampler.append(InverseTransformSampler(kdes[i].pdf, xmin, xmax)) # contains the Inverse transform sampler for each parameter
+        sampledVals.append(sampler[i](nsamples)) # contains the list of sampled values for each parameter
+        #We now have a sample and samples for each parameter
+        del key1, xmin, xmax, xedges, cdf, pdfvals, cdfvals
+    print('Saving sampler to ' + os.path.join(filepath,invTransFile))
+    with open(os.path.join(filepath,invTransFile), 'wb') as f:
+        pickle.dump(sampler, f)
+    print('Saving kde to ' + os.path.join(filepath,kdeFile))
+    with open(os.path.join(filepath,kdeFile), 'wb') as f:
+        pickle.dump(kdes, f)
+    print('Saving sampledVals to ' + os.path.join(filepath,sampledValsFile))
+    with open(os.path.join(filepath,sampledValsFile), 'wb') as f:
+        pickle.dump(sampledVals, f)
 print('Done Calculating Single-Variable Inverse Transform Sampler')
 ####################################################################################################################
 
@@ -767,10 +820,14 @@ ikey3 = 6 # semi major axis
 ikey4 = 2 #inclination
 ikey5 = 4 # argument of perigee
 ikey6 = 5 # longitude of the ascending node
+ikey12 = 12 # omega + v
 key1 = list(pdData.keys())[ikey1] #ok #Eccentric\nAnomaly\n(rad)
 key2 = list(pdData.keys())[ikey2] #ok #Eccentricity
 key3 = list(pdData.keys())[ikey3] #ok #semi major axis
 key4 = list(pdData.keys())[ikey4] # #inclination
+key5 = list(pdData.keys())[ikey5] # #argument of perigee
+key6 = list(pdData.keys())[ikey6] # #longitude of the ascending node
+key12 = list(pdData.keys())[ikey12] # omega + v
 
 #Calculate value ranges
 #DELETE eccen_range = np.linspace(start=np.min(pdData['Eccentricity']),stop=np.max(pdData['Eccentricity']),num=300, endpoint=True)
@@ -784,12 +841,15 @@ xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key3,key3)
 SMA_range = np.linspace(start=xaxismin,stop=xaxismax,num=300, endpoint=True)
 xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key4,key4)
 i_range = np.linspace(start=xaxismin,stop=xaxismax,num=300, endpoint=True)
+xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key5,key5)
+omega_range = np.linspace(start=xaxismin,stop=xaxismax,num=300, endpoint=True)
 
 
 #Verify the intgral over the eccentricity gaussian KDE is 1.
 eccen_normalization_constant = kdes[ikey2].integrate_box_1d(-np.inf, np.inf)
 #Calculate probabilities for each eccen in the r data cube
 P_eccen_rplot = kdes[ikey2](eccen_range)
+P_omega_rplot = kdes[ikey5](omega_range)
 
 
 #### Demonstrate E vs eccentricity values are valid
@@ -867,6 +927,28 @@ plt.ylabel('Cumulative Probability', weight='bold')
 plt.show(block=False)
 ####
 
+#### Plot omega given E
+
+#Calculates Probability of E given omega CONTOUR
+omega_grid, E_grid = np.meshgrid(omega_range,E_range) 
+P_E_given_omega = mDFL[key1][key5]['vectorizedEVPOCpdf'](omega_grid,E_grid)
+#NOTE: WHILE INTERESTING, THIS IS NOT USEFUL BECAUSE A SINGLE ECCENTRICITY IS GENERATED SO ALL ECCENTRICITIES MUST BE THE SAME
+#Calculate P(E|e)*P(e)
+for i in np.arange(len(omega_range)):
+    P_E_given_omega[i,:] = P_omega_rplot[i]*P_E_given_omega[i,:]
+#Normalize P(E|e)*P(e)
+P_E_given_omega = P_E_given_omega/np.sum(P_E_given_omega)
+plt.close(32168368722)
+fig = plt.figure(32168368722,figsize=(8,6))
+#ax= fig.add_subplot(111)#, projection= '3d')
+alpha = 0.5
+plt.contourf(omega_grid, E_grid, P_E_given_omega)
+plt.xlabel('omega, w', weight='bold')
+plt.ylabel('E in rad', weight='bold')
+#ax.set_zlabel('Probability')
+plt.colorbar(cmap='bwr')
+plt.show(block=False)
+###########################
 
 
 
@@ -892,7 +974,7 @@ for i in np.arange(len(ebins)-1):
 E_given_ei = list()
 for i_e in np.arange(len(eccens)):
     #find eccen ind
-    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] > ebins[:-1]))[0][0]
+    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] >= ebins[:-1]))[0][0]
     E_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=Ecumsum_given_ei[eccen_ind], xcent=Es, nsamples=1)[0])
 
 print('Done calculating E_given_ei')
@@ -910,26 +992,97 @@ for i in np.arange(len(ebins)-1):
 SMA_given_ei = list()
 for i_e in np.arange(len(eccens)):
     #find eccen ind
-    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] > ebins[:-1]))[0][0]
+    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] >= ebins[:-1]))[0][0]
     SMA_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=SMAcumsum_given_ei[eccen_ind], xcent=SMAs, nsamples=1)[0])
 print('Done calculating SMA_given_ei')
 
 #4. grab a random inclination given eccen
-xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key4,key4)
-inclinations = np.linspace(start=xaxismin,stop=xaxismax,num=134,endpoint=True)
+xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key4,key4) # key4 is inclination
+inclinations = np.linspace(start=xaxismin,stop=xaxismax,num=268,endpoint=True) #swapped out 134
 icumsum_given_ei = list()
 for i in np.arange(len(ebins)-1):
-    i_marginalized_eccen = calc_fdY( inclinations, ebins[i]+np.zeros(len(inclinations)), ebins[i+1]+np.zeros(len(inclinations)), mDFL[key4][key2]['EVPOCpdf'], mDFL[key4][key2]['xnew']) # calculates marginalized PDF
+    i_marginalized_eccen = calc_fdY( inclinations, ebins[i]+np.zeros(len(eccens)), ebins[i+1]+np.zeros(len(eccens)), mDFL[key4][key2]['EVPOCpdf'], mDFL[key4][key2]['xnew']) # calculates marginalized PDF
     i_marginalized_eccen2 = [i_marginalized_eccen[i] if i_marginalized_eccen[i] >= 0. else 0. for i in np.arange(len(i_marginalized_eccen))] # sets all negative values to 1
     i_marginalized_eccen2 = i_marginalized_eccen2/np.sum(i_marginalized_eccen2) #re-normalizes distribution
     icumsum_given_ei.append(np.cumsum(i_marginalized_eccen2))
-    #print('SMA index: ' + str(i/(len(ebins)-1.)))
+    #print('inc index: ' + str(i/(len(ebins)-1.)))
 i_given_ei = list()
 for i_e in np.arange(len(eccens)):
     #find eccen ind
-    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] > ebins[:-1]))[0][0]
+    eccen_ind = np.where((eccens[i_e] < ebins[1:])*(eccens[i_e] >= ebins[:-1]))[0][0]
     i_given_ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=icumsum_given_ei[eccen_ind], xcent=inclinations, nsamples=1)[0])
 print('Done calculating i_given_ei')
+
+################################################
+#5. grab a random Argument of Perigee + true anomaly given inclination
+# Calculate True Anomaly Distribution From Eccentric Anomaly Distribution ##########
+## AKA distribution of true anomaly given e_i
+v_given_ei = list()
+for i in np.arange(len(E_given_ei)):
+    v_given_ei.append(v_from_Ee(E_given_ei[i],eccens[i]))
+Inclinationout, Inclinationbins = pd.qcut(pdData['Inclination\n(rad)'],q=100,retbins=True)
+Inclinationbins[0] = 0. # need to set limits manually
+Inclinationbins[-1] = np.pi # need to set limits manually
+xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key12,key12)
+omegasPlusv = np.linspace(start=xaxismin,stop=xaxismax,num=134,endpoint=True)
+omegaPlusvcumsum_given_Inclinationi = list()
+for i in np.arange(len(Inclinationbins)-1):
+    omegasPlusv_marginalized_Inclination = calc_fdY( omegasPlusv, Inclinationbins[i]+np.zeros(len(omegasPlusv)), Inclinationbins[i+1]+np.zeros(len(omegasPlusv)), mDFL[key12][key4]['EVPOCpdf'], mDFL[key12][key4]['xnew']) # calculates marginalized PDF
+    omegasPlusv_marginalized_Inclination2 = [omegasPlusv_marginalized_Inclination[i] if omegasPlusv_marginalized_Inclination[i] >= 0. else 0. for i in np.arange(len(omegasPlusv_marginalized_Inclination))] # sets all negative values to 0
+    omegasPlusv_marginalized_Inclination2 = omegasPlusv_marginalized_Inclination2/np.sum(omegasPlusv_marginalized_Inclination2) #re-normalizes distribution
+    omegaPlusvcumsum_given_Inclinationi.append(np.cumsum(omegasPlusv_marginalized_Inclination2))
+    #print('omega index: ' + str(i/(len(Ebins)-1.)))
+omegasPlusv_given_Inclinationi = list()
+omega_given_Inclinationi = list()
+for i_e in np.arange(len(eccens)):
+    #find eccen ind
+    Inclination_ind = np.where((i_given_ei[i_e] <= Inclinationbins[1:])*(i_given_ei[i_e] >= Inclinationbins[:-1]))[0][0]
+    omegasPlusv_given_Inclinationi.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=omegaPlusvcumsum_given_Inclinationi[Inclination_ind], xcent=omegasPlusv, nsamples=1)[0])
+    omega_given_Inclinationi.append(omegasPlusv_given_Inclinationi[-1]-v_given_ei[i_e])
+print('Done calculating omega_given_Inclinationi')
+ 
+# #5. grab a random Argument of Perigee given E #REPLACED BY IMMEDIATELY ABOVE WHICH GIVES BETTER INC VS OMEGA PLOT AND INC VS OMEGA+V PLOT
+# ################################################
+# Eout, Ebins = pd.qcut(pdData['Eccentric\nAnomaly\n(rad)'],q=100,retbins=True)
+# Ebins[0] = 0. # need to set limits manually
+# Ebins[-1] = 2.*np.pi # need to set limits manually
+# xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key5,key5)
+# omegas = np.linspace(start=xaxismin,stop=xaxismax,num=134,endpoint=True)
+# omegacumsum_given_Ei = list()
+# for i in np.arange(len(Ebins)-1):
+#     omega_marginalized_E = calc_fdY( omegas, Ebins[i]+np.zeros(len(omegas)), Ebins[i+1]+np.zeros(len(omegas)), mDFL[key5][key1]['EVPOCpdf'], mDFL[key5][key1]['xnew']) # calculates marginalized PDF
+#     omega_marginalized_E2 = [omega_marginalized_E[i] if omega_marginalized_E[i] >= 0. else 0. for i in np.arange(len(omega_marginalized_E))] # sets all negative values to 0
+#     omega_marginalized_E2 = omega_marginalized_E2/np.sum(omega_marginalized_E2) #re-normalizes distribution
+#     omegacumsum_given_Ei.append(np.cumsum(omega_marginalized_E2))
+#     #print('omega index: ' + str(i/(len(Ebins)-1.)))
+# omega_given_Ei = list()
+# for i_e in np.arange(len(eccens)):
+#     #find eccen ind
+#     E_ind = np.where((E_given_ei[i_e] <= Ebins[1:])*(E_given_ei[i_e] >= Ebins[:-1]))[0][0]
+#     omega_given_Ei.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=omegacumsum_given_Ei[E_ind], xcent=omegas, nsamples=1)[0])
+# print('Done calculating omega_given_Ei')
+#################################################33
+
+
+#6. grab a random Longitude of Ascending Node given inclination
+Inclinationout, Inclinationbins = pd.qcut(pdData['Inclination\n(rad)'],q=100,retbins=True)
+Inclinationbins[0] = 0. # need to set limits manually
+Inclinationbins[-1] = np.pi # need to set limits manually
+xaxismin, xaxismax, yaxismin, yaxismax = get_pdDataLimits(pdData,key6,key6)
+Omegas = np.linspace(start=xaxismin,stop=xaxismax,num=134,endpoint=True)
+Omegacumsum_given_Inclinationi = list()
+for i in np.arange(len(Inclinationbins)-1):
+    Omega_marginalized_Inclination = calc_fdY( Omegas, Inclinationbins[i]+np.zeros(len(Omegas)), Inclinationbins[i+1]+np.zeros(len(Omegas)), mDFL[key6][key4]['EVPOCpdf'], mDFL[key6][key4]['xnew']) # calculates marginalized PDF
+    Omega_marginalized_Inclination2 = [Omega_marginalized_Inclination[i] if Omega_marginalized_Inclination[i] >= 0. else 0. for i in np.arange(len(Omega_marginalized_Inclination))] # sets all negative values to 0
+    Omega_marginalized_Inclination2 = Omega_marginalized_Inclination2/np.sum(Omega_marginalized_Inclination2) #re-normalizes distribution
+    Omegacumsum_given_Inclinationi.append(np.cumsum(Omega_marginalized_Inclination2))
+    #print('omega index: ' + str(i/(len(Ebins)-1.)))
+Omega_given_Inclinationi = list()
+for i_e in np.arange(len(eccens)):
+    #find eccen ind
+    Inclination_ind = np.where((i_given_ei[i_e] <= Inclinationbins[1:])*(i_given_ei[i_e] >= Inclinationbins[:-1]))[0][0]
+    Omega_given_Inclinationi.append(EvsECCENsampler.discreteInverseTransformSampler_given_1DCMF(cmf=Omegacumsum_given_Inclinationi[Inclination_ind], xcent=Omegas, nsamples=1)[0])
+print('Done calculating Omega_given_inclinationi')
 
 
 def r_from_aeE(a, e, E):
@@ -944,7 +1097,7 @@ def r_from_aeE(a, e, E):
     r = a*(1.-e**2.)/(1.+e*((np.cos(E)-e)/(1.-e*np.cos(E))))
     return r
 
-#5. Calculate distribution of f(r)
+#7. Calculate distribution of f(r)
 f_r = list()
 for i in np.arange(len(SMA_given_ei)):
     f_r.append(r_from_aeE(SMA_given_ei[i], eccens[i], E_given_ei[i]))
@@ -1027,58 +1180,34 @@ plt.show(block=False)
 SaveToFile('BetaValue_', plotBOOL=plotBOOL)
 #######################################################################################
 
-#### Calculate True Anomaly Distribution From Eccentric Anomaly Distribution ##########
-## AKA distribution of true anomaly given e_i
-def v_from_Ee(E,e):
-    """ From Dmitry's paper, can calculate true anomaly from eccentricity and Eccentric Anomaly
-    Args:
-        E (float) - Eccentric Anomaly in range [0,2pi] 
-        e (float) - eccentricity in range [0,1)
-    Returns:
-        v (float) - true anomaly in range [0,2pi]
-    """
-    v = 2.*np.atan(np.sqrt((1.+e)/(1.-e))*np.tan(E/2.))
-    return v
-v_given_ei = list()
-for i in np.arange(len(E_given_ei)):
-    v_given_ei.append(v_from_Ee(E_given_ei[i],eccens[i]))
-#######################################################################################
-
-#### Generate argument of perigee #####################################################
-omegai = sampler[ikey5](Nsamples)
-#######################################################################################
-#### Generate longitude of the ascending node #########################################
-Omegai = sampler[ikey6](Nsamples)
-#######################################################################################
-
 #### Pos of Simulated Spacecraft ######################################################
 def XYZ_from_rOmegaomegavi(r,Omega,omega,v,i):
     """Calculates X,Y,Z position in ECI from r, Omega, omega, inclination
     Args:
         r (float) - radial distance from the Earth Centered Inertial Frame
-        Omega (float) - Longitude of the Ascending Node
-        omega (float) - argument of perigee
+        Omega (float) - Longitude of the Ascending Node in rad
+        omega (float) - argument of perigee in rad
         v (float) - true anomaly
-        i (float) - inclination
+        i (float) - inclination in rad
     Returns:
         X (numpy array) - (x,y,z) position in ECI
     """
     X = r*(np.cos(Omega)*np.cos(omega+v) - np.sin(Omega)*np.sin(omega+v)*np.cos(i))
     Y = r*(np.sin(Omega)*np.cos(omega+v) - np.cos(Omega)*np.sin(omega+v)*np.cos(i))
     Z = r*(np.sin(i)*np.sin(omega+v))
-    return np.asarray(X, Y, Z)
+    return np.asarray([X, Y, Z])
 simulated_SC_Pos = list()
-for i in np.arange(len(Omegai)):
-    simulated_SC_Pos.append(XYZ_from_rOmegaomegavi(f_r[i],Omegai[i],omegai[i],v_given_ei[i],i_given_ei[i]))
+for i in np.arange(Nsamples):
+    simulated_SC_Pos.append(XYZ_from_rOmegaomegavi(f_r[i],Omega_given_Inclinationi[i],omega_given_Inclinationi[i],v_given_ei[i],i_given_ei[i]))
 simulated_SC_Pos = np.asarray(simulated_SC_Pos)
 #######################################################################################
 
 #### Pos of Real Spacecraft ###########################################################
-real_r
 ## Calculate real v given e,E
 realv_given_realeE = list()
 for i in np.arange(len(pdData['Eccentric\nAnomaly\n(rad)'])):
     realv_given_realeE.append(v_from_Ee(pdData['Eccentric\nAnomaly\n(rad)'][i],pdData['Eccentricity'][i]))
+realv_given_realeE = np.asarray(realv_given_realeE)    
 ## Calculate SC Pos
 real_SC_Pos = list()
 for i in np.arange(len(pdData['Arg. of\nPerigee\n(rad)'])):
@@ -1090,58 +1219,157 @@ for i in np.arange(len(pdData['Arg. of\nPerigee\n(rad)'])):
 real_SC_Pos = np.asarray(real_SC_Pos)
 #######################################################################################
 
+#Validation Check
+print(len(omega_given_Inclinationi))
+print(len(np.where(((np.asarray(omega_given_Inclinationi)+np.asarray(v_given_ei))>np.pi)*((np.asarray(omega_given_Inclinationi)+np.asarray(v_given_ei))<2.*np.pi))[0]))
+print(len(np.where(((np.asarray(pdData[key5])+np.asarray(realv_given_realeE))>np.pi)*((np.asarray(pdData[key5])+np.asarray(realv_given_realeE))<2.*np.pi))[0]))
+#For REAL DATA This says there are ~1500 below the z axis
+#For SIMULATED DATA This says there are ~6500 below 
+tmp = np.asarray(pdData[key5])+np.asarray(realv_given_realeE)
+tmp2 = list()
+for i in np.arange(len(tmp)):
+    if tmp[i] > 2.*np.pi:
+        tmp2.append(tmp[i]-2.*np.pi)
+    elif tmp[i] < 0.:
+        tmp2.append(tmp[i]+2.*np.pi)
+    else:
+        tmp2.append(tmp[i])
+print(len(np.where((np.asarray(tmp2)>np.pi)*(np.asarray(tmp2)<2.*np.pi))[0]))
+print(len(np.where((np.asarray(tmp2)>0.)*(np.asarray(tmp2)<np.pi))[0]))
+tmp3 = np.asarray(omega_given_Inclinationi)+np.asarray(v_given_ei)
+tmp4 = list()
+for i in np.arange(len(tmp3)):
+    if tmp3[i] > 2.*np.pi:
+        tmp4.append(tmp3[i]-2.*np.pi)
+    elif tmp3[i] < 0.:
+        tmp4.append(tmp3[i]+2.*np.pi)
+    else:
+        tmp4.append(tmp3[i])
+print(len(np.where((np.asarray(tmp4)>np.pi)*(np.asarray(tmp4)<2.*np.pi))[0]))
+print(len(np.where((np.asarray(tmp4)>0.)*(np.asarray(tmp4)<np.pi))[0]))
+
+plt.figure()
+plt.hist(tmp2,color='black', bins=134, alpha=0.5)
+plt.hist(tmp4,color='blue', bins=134, alpha=0.5)
+plt.show(block=False)
+
+## Does Inclination depend on omega+v?? #WOW YES IT CERTAINLY DOES
+plt.figure()
+plt.scatter(tmp2,pdData[key4],alpha=0.025)
+plt.show(block=False)
+
+
+
+
+
 #### Plot Real Positions of Spacecraft in 3D
 plt.close(11256)
-fig = plt.figure(11256,figsize=(6,10))
+fig = plt.figure(11256,figsize=(10,6))
 plt.rc('axes',linewidth=2)
 plt.rc('lines',linewidth=2)
 plt.rcParams['axes.linewidth']=2
 plt.rc('font',weight='bold')
 ax10= fig.add_subplot(121, projection= '3d')
 ax11= fig.add_subplot(122, projection= '3d')
-alpha = 0.05
+alpha = 0.025
 ax10.scatter(real_SC_Pos[:,0],real_SC_Pos[:,1],real_SC_Pos[:,2],alpha=alpha)
 ax10.set_xlabel('X', weight='bold')
 ax10.set_ylabel('Y', weight='bold')
 ax10.set_zlabel('Z', weight='bold')
-ax10.set_xlim([np.min(real_SC_Pos[:,0]),np.max(real_SC_Pos[:,0])])
-ax10.set_ylim([np.min(real_SC_Pos[:,1]),np.max(real_SC_Pos[:,1])])
-ax10.set_zlim([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
+ax10.set_title('Real Spacecraft, ECI',weight='bold')
+ax10.set_xlim([-5.,5.])#([np.min(real_SC_Pos[:,0]),np.max(real_SC_Pos[:,0])])
+ax10.set_ylim([-5.,5.])#([np.min(real_SC_Pos[:,1]),np.max(real_SC_Pos[:,1])])
+ax10.set_zlim([-5.,5.])#([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
+# ax10.set_xlim([np.min(real_SC_Pos[:,0]),np.max(real_SC_Pos[:,0])])
+# ax10.set_ylim([np.min(real_SC_Pos[:,1]),np.max(real_SC_Pos[:,1])])
+# ax10.set_zlim([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
 
 ax11.scatter(simulated_SC_Pos[:,0],simulated_SC_Pos[:,1],simulated_SC_Pos[:,2],alpha=alpha)
 ax11.set_xlabel('X', weight='bold')
 ax11.set_ylabel('Y', weight='bold')
 ax11.set_zlabel('Z', weight='bold')
-ax11.set_xlim([np.min(real_SC_Pos[:,0]),np.max(real_SC_Pos[:,0])])
-ax11.set_ylim([np.min(real_SC_Pos[:,1]),np.max(real_SC_Pos[:,1])])
-ax11.set_zlim([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
+ax11.set_title('Simulated Spacecraft, ECI',weight='bold')
+ax11.set_xlim([-5.,5.])#([np.min(real_SC_Pos[:,0]),np.max(real_SC_Pos[:,0])])
+ax11.set_ylim([-5.,5.])#([np.min(real_SC_Pos[:,1]),np.max(real_SC_Pos[:,1])])
+ax11.set_zlim([-5.,5.])#([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
+# ax11.set_xlim([np.min(real_SC_Pos[:,0]),np.max(real_SC_Pos[:,0])])
+# ax11.set_ylim([np.min(real_SC_Pos[:,1]),np.max(real_SC_Pos[:,1])])
+# ax11.set_zlim([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
 plt.tight_layout()
 plt.show(block=False)
 # Save to a File
 SaveToFile('SimReal3Dvisualization_', plotBOOL=True)#plotBOOL)
 ######################################################################################################
 
-#### Calculate Visual Magnitude of Spacecraft ######################################################################
+##### JUST CHECKING STUFF
+plt.figure()
+plt.scatter(pdData['Eccentric\nAnomaly\n(rad)'],pdData['Inclination\n(rad)'], alpha=0.025,color='blue')
+plt.scatter(E_given_ei,i_given_ei, alpha=0.025,color='red')
+plt.xlabel('E')
+plt.ylabel('i')
+plt.show(block=False)
 
+plt.figure()
+plt.scatter(pdData['Longitude\nAscending\nNode\n(rad)'],pdData['Inclination\n(rad)'], alpha=0.025,color='blue')
+plt.scatter(Omega_given_Inclinationi,i_given_ei, alpha=0.025,color='red')
+plt.xlabel('Omega')
+plt.ylabel('i')
+plt.show(block=False)
+
+######################################################
+#### Calculate Earth and Sun Positions
+import GrabJPLHorizons_AFRL
+bodyName = 'EARTH'
+START_TIME = '2019-06-11'#'yyyy-mm-dd'
+STOP_TIME = '2019-06-12'#'yyyy-mm-dd'
+STEP_SIZE = '60min'
+OBJ_DATA = 'YES'
+MAKE_EPHEM = 'YES'
+OUT_UNITS='KM-S'
+TABLE_TYPE='VECTOR'
+CENTER='@Sun'
+time_sun, r_earth_sun = GrabJPLHorizons_AFRL.extractPositions(bodyName, START_TIME, STOP_TIME, STEP_SIZE, OBJ_DATA, MAKE_EPHEM,\
+        OUT_UNITS,TABLE_TYPE,CENTER)
+#####
+
+#### Calculate Visual Magnitude of Spacecraft ######################################################################
+def calc_Vmag(solarFlux, bulk_albedo, r_sun_sc, nhat, A_aperture, r_gs_sc, vegaFlux):
+    """ The fully parameterized equation for visual magnitude
+    Args:
+        solarFlux (float) - solar flux in W/m^2
+        bulk_albedo (float) - Bulk Albedo of spacecraft surface
+        r_sun_sc (numpy array) - 3 component vector of sun from spacecraft
+        nhat (numpy array) - 3 component unit vector describing spacecraft surface normal
+        A_aperture (float) - Area of telescope aperture in m^2
+        r_gs_sc (numpy array) - 3 component vector of ground station w.r.t SC
+        vegaFlux (float) - Flux From Vega in W/m^2
+    """
+    numerator = solarFlux*(1.-bulk_albedo)*\
+        (no.dot(r_sun_sc,nhat)/np.linalg.norm(r_sun_sc))*\
+        (A_aperture/np.linalg.norm(r_gs_sc)**3.)*\
+        (np.dot(r_gs_sc,nhat))
+    denominator = 2.*np.pi*vegaFlux
+    Vmag = -2.5*np.log10(numerator/denominator)
+    return Vmag
 ####################################################################################################################
 
 
 
 
-#### Performing the triple integral ##################################################
-from scipy.integrate import quad as quad
+# #### Performing the triple integral ##################################################
+# from scipy.integrate import quad as quad
 
-def f_rho(X,Y,Z):
-    return taco
+# def f_rho(X,Y,Z):
+#     return taco
 
-def f_phi_theta():
-    return taco2
+# def f_phi_theta():
+#     return taco2
 
-def f_phi():
-    return taco3
+# def f_phi():
+#     return taco3
 
-phi_min = 0.
-phi_max = FoV/2.
-Upsilon = quad(f_phi,phi_min,phi_max)
-#quad(func,a,b) #template for execution of quad
-######################################################################################
+# phi_min = 0.
+# phi_max = FoV/2.
+# Upsilon = quad(f_phi,phi_min,phi_max)
+# #quad(func,a,b) #template for execution of quad
+# ######################################################################################
