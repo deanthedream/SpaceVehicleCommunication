@@ -51,14 +51,14 @@ def SaveToFile(UniqueName, plotBOOL=False):
     plt.gca()
     # Save to a File
     if plotBOOL==True:
-        PPoutpath = '/home/dean/Documents/AFRL2019'
+        PPoutpath = '/home/dean/Documents/AFRL2019/figures'
         folder = PPoutpath
         date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = UniqueName + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
-        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
+        #plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        #plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
         print('Done Saving ' + UniqueName + ' Figure')
         del PPoutpath, folder, fname
     else:
@@ -1298,7 +1298,7 @@ ax11.set_zlim([-5.,5.])#([np.min(real_SC_Pos[:,2]),np.max(real_SC_Pos[:,2])])
 plt.tight_layout()
 plt.show(block=False)
 # Save to a File
-SaveToFile('SimReal3Dvisualization_', plotBOOL=True)#plotBOOL)
+SaveToFile('SimReal3Dvisualization_', plotBOOL=plotBOOL)
 ######################################################################################################
 
 ##### JUST CHECKING STUFF
