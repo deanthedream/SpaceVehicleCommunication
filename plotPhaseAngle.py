@@ -1272,6 +1272,7 @@ plt.rc('font',weight='bold')
 ax10= fig.add_subplot(121, projection= '3d')
 ax11= fig.add_subplot(122, projection= '3d')
 alpha = 0.025
+
 ax10.scatter(real_SC_Pos[:,0],real_SC_Pos[:,1],real_SC_Pos[:,2],alpha=alpha, color='black')
 ax10.set_xlabel(r'X, in $R_\oplus$', weight='bold')
 ax10.set_ylabel(r'Y, in $R_\oplus$', weight='bold')
