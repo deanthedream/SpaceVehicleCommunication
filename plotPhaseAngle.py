@@ -1105,11 +1105,11 @@ for i in np.arange(len(SMA_given_ei)):
 #### Plot f_r distributions vs various synthetic parameters
 fignum = 38411
 plt.close(fignum)
-ax = plt.subplots(nrows=3,ncols=2,num=fignum, sharey=True, figsize=(6,10)) #nrows, ncols
 plt.rc('axes',linewidth=2)
 plt.rc('lines',linewidth=2)
 plt.rcParams['axes.linewidth']=2
 plt.rc('font',weight='bold')
+ax = plt.subplots(nrows=3,ncols=2,num=fignum, sharey=True, figsize=(6,10)) #nrows, ncols
 plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.0, hspace=0.1)
 ax[1][0][1].scatter(E_given_ei,f_r, alpha=0.01, color='blue')
 ax[1][0][1].title.set_text('Simulated Data')
@@ -1117,7 +1117,7 @@ ax[1][0][1].title.set_weight('bold')
 ax[1][0][1].set_xlabel('Eccentric Anomaly in (rad)', weight='bold')
 ax[1][1][1].scatter(eccens,f_r, alpha=0.01, color='blue')
 ax[1][1][1].set_xlabel('eccentricity', weight='bold')
-ax[1][2][1].scatter(SMA_given_ei,f_r, alpha=0.01, color='black')
+ax[1][2][1].scatter(SMA_given_ei,f_r, alpha=0.01, color='blue')
 ax[1][2][1].set_xlabel('Semi-major axis (Earth Radii)', weight='bold')
 plt.show(block=False)
 ###########################################################################
@@ -1140,7 +1140,7 @@ ax[1][2][0].set_xlabel('Semi-major axis (Earth Radii)', weight='bold')
 ax[1][2][0].set_ylabel('r in (Earth Radii)', weight='bold')
 plt.tight_layout()
 plt.show(block=False)
-SaveToFile('rSimulatedvsReal_', plotBOOL=plotBOOL)
+SaveToFile('rSimulatedvsReal_', plotBOOL=True)#plotBOOL)
 ###########################################################################
 
 
