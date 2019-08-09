@@ -1374,3 +1374,28 @@ def calc_Vmag(solarFlux, bulk_albedo, r_sun_sc, nhat, A_aperture, r_gs_sc, vegaF
 # Upsilon = quad(f_phi,phi_min,phi_max)
 # #quad(func,a,b) #template for execution of quad
 # ######################################################################################
+
+#### Plots the maximum value of eccentricity, e_max(r,a)
+import numpy as np
+import matplotlib.pyplot as plt
+rr = np.linspace(start=1,stop=10,num=100)
+aa = np.linspace(start=np.min(rr),stop=np.max(rr),num=100)
+emax = np.zeros([len(rr),len(aa)])
+rr_aa_grid = list()
+
+for i in np.arange(len(rr)):
+    for j in np.arange(len(aa)):
+        rr_aa_grid.append([rr[i],aa[j]])
+        emax[i,j] = np.min([1.-rr[i]/aa[j],rr[i]/aa[j]-1.])
+rr_aa_grid = np.asarray(rr_aa_grid)
+emax = np.asarray(emax)
+
+plt.figure()
+plt.contourf(rr,aa,emax, levels=100)
+plt.xlabel('r')
+plt.ylabel('a')
+plt.colorbar() # eccentricity
+plt.show(block=False)
+
+
+
