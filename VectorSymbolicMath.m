@@ -114,4 +114,9 @@ a41 = diff(out.ii,X)
 a42 = diff(out.ii,Y)
 a43 = diff(out.ii,Z)
 
+detB2 = det([   a11, a12, a13, 1;
+                a21, a22, a23, 1;
+                a31, a32, a33, 1;
+                a41, a42, a43, 1])
+
 
