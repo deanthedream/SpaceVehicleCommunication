@@ -66,9 +66,9 @@ def eulerRotationMatrix(e,theta):
     Return:
         rot_mat (array) - 3x3 rotation matrix
     """
-    rot_mat = np.asarray([np.cos(theta)+(1.-np.cos(theta))*e[0]**2.,        (1.-np.cos(theta))*e[0]*e[1]+np.sin(theta)*e[2],    (1.-np.cos(theta))*e[0]*e[2]-np.sin(theta)*e[1]\
-                          (1.-np.cos(theta))*e[1]*e[0]-np.sin(theta)*e[2],  np.cos(theta)+(1.-np.cos(theta))*e[1]**2.,          (1.-np.cos(theta))*e[1]*e[2]+np.sin(theta)*e[0]\
-                          (1.-np.cos(theta))*e[2]*e[0]+np.sin(theta)*e[1],  (1.-np.cos(theta))*e[2]*e[1]-np.sin(theta)*e[0],    np.cos(theta)+(1.-np.cos(theta))*e[2]**3.])
+    rot_mat = np.asarray([[np.cos(theta)+(1.-np.cos(theta))*e[0]**2.,        (1.-np.cos(theta))*e[0]*e[1]+np.sin(theta)*e[2],    (1.-np.cos(theta))*e[0]*e[2]-np.sin(theta)*e[1]],\
+                          [(1.-np.cos(theta))*e[1]*e[0]-np.sin(theta)*e[2],  np.cos(theta)+(1.-np.cos(theta))*e[1]**2.,          (1.-np.cos(theta))*e[1]*e[2]+np.sin(theta)*e[0]],\
+                          [(1.-np.cos(theta))*e[2]*e[0]+np.sin(theta)*e[1],  (1.-np.cos(theta))*e[2]*e[1]-np.sin(theta)*e[0],    np.cos(theta)+(1.-np.cos(theta))*e[2]**3.]])
     return rot_mat
 
 def q_rep(e,theta):
