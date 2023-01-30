@@ -51,11 +51,11 @@ def SaveToFile(UniqueName, plotBOOL=False):
     plt.gca()
     # Save to a File
     if plotBOOL==True:
-        PPoutpath = '/home/dean/Documents/AFRL2019/figures'
+        PPoutpath = os.path.join(os.getcwd(),"figures")#'/home/dean/Documents/AFRL2019/figures'
         folder = PPoutpath
         date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
-        fname = UniqueName + folder.split('/')[-1] + '_' + date
+        fname = UniqueName + folder.split(os.sep)[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=200)
         #plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         #plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=200)
@@ -108,14 +108,14 @@ def extractTLEdata(TLEfilepath,TLEfilename):
     return satData, lines, numTLE
 
 pandasFile = "pdData.pkl"
-filepath = "/home/dean/Documents/AFRL2019"
+filepath = os.getcwd()#"/home/dean/Documents/AFRL2019"
 if os.path.exists(os.path.join(filepath,pandasFile)):
     with open(os.path.join(filepath,pandasFile), 'rb') as f:
         pdData = pickle.load(f)
     print('Loaded pdData from ' + os.path.join(filepath,pandasFile))
 else:
     #### Open space-track TLE file #########################################
-    TLEfilepath = "/home/dean/Documents/AFRL2019"
+    TLEfilepath = os.getcwd()#"/home/dean/Documents/AFRL2019"
     TLEfilename = "3le.txt"
     satData, lines, numTLE = extractTLEdata(TLEfilepath,TLEfilename)
     print('Done Loading TLE Data')
@@ -370,7 +370,7 @@ def get_pdDataLimits(pdData,key1,key2):
 
 
 mDFLFile = "mDFL.pkl"
-filepath = "/home/dean/Documents/AFRL2019"
+filepath = os.getcwd()#"/home/dean/Documents/AFRL2019"
 if os.path.exists(os.path.join(filepath,mDFLFile)):
     with open(os.path.join(filepath,mDFLFile), 'rb') as f:
         mDFL = pickle.load(f)
@@ -505,7 +505,7 @@ from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
 invTransFile = "invTrans.pkl"
 kdeFile = "kde.pkl"
 sampledValsFile = "sampledVals.pkl"
-filepath = "/home/dean/Documents/AFRL2019"
+filepath = os.getcwd()#"/home/dean/Documents/AFRL2019"
 if os.path.exists(os.path.join(filepath,invTransFile)) and os.path.exists(os.path.join(filepath,kdeFile)) and os.path.exists(os.path.join(filepath,sampledValsFile)):
     with open(os.path.join(filepath,invTransFile), 'rb') as f:
         sampler = pickle.load(f)
@@ -1397,5 +1397,21 @@ plt.ylabel('a')
 plt.colorbar() # eccentricity
 plt.show(block=False)
 
+
+
+
+
+
+
+#### Write Out Sample KOE to File
+"""
+file format is 1 KOE per line
+SMA in earth radius, eccentricity, inclination from 0 to pi in rad, Omega from 0 to 2pi in rad, omega from 0 to 2pi in rad, true anomaly from 0 to 2pi in rad
+"""
+outpath = os.getcwd()
+filename = "simulatedKOEs.txt"
+with open(os.path.join(outpath,filename),"w") as f:
+    for i in np.arange(len(eccens)):
+        f.write(",".join([str(SMA_given_ei[i]),str(eccens[i]),str(i_given_ei[i]),str(Omega_given_Inclinationi[i]),str(omega_given_Inclinationi[i]),str(v_given_ei[i])]) + "\n")
 
 
